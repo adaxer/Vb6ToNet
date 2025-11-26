@@ -1,5 +1,6 @@
 ﻿Option Explicit On
 Imports System.Diagnostics.Metrics
+Imports System.Security.Principal
 Imports System.Text.Json
 Imports Microsoft.Data.SqlClient
 
@@ -16,7 +17,7 @@ Module StartCode
     Public Class Styp 'zusammensetzung aus 2 datenbanken, deswegen leider redundant
         Public Artnr As String  'nur hier einstellen, dann werden gleich ein paar aufgaben mehr erledigt' Call Code1.SystemTyp_Set(ArtListe.TextMatrix(1, 4))
         Public Typenreihe As String
-        Public Netto As String 'artnr kann schon mal mehr als 6 zeichen umfassen, dann sind hier auf jeden fall nur 6 drin
+        'Public Netto As String 'artnr kann schon mal mehr als 6 zeichen umfassen, dann sind hier auf jeden fall nur 6 drin
         Public Name As String
         Public ACX As String
         Public Gewicht As Single
@@ -37,11 +38,15 @@ Module StartCode
         Public rho As Double
         Public Zahnabstand As String
         Public RZ As String
-        Public TGR As String 'manschettenregeln, wird derzeit nicht benutzt. gibt gruppenzugehörigkeit bei extremultus an, da erst sind die manschetten drin
+        'Public TGR As String 'manschettenregeln, wird derzeit nicht benutzt. gibt gruppenzugehörigkeit bei extremultus an, da erst sind die manschetten drin
         Public Verbindung01 As String
-        Public Fach5101 As String 'artikelspezifisches fach der japaner, einstweilen wird das nicht gebraucht
-        Public ProjektXPeriod_aut As Integer 'posps spinnerei, unbenutzt
-        Public ProjektXPeriod_man As Integer 'posps spinnerei, unbenutzt
+        'Public Fach5101 As String 'artikelspezifisches fach der japaner, einstweilen wird das nicht gebraucht
+        'Public ProjektXPeriod_aut As Integer 'posps spinnerei, unbenutzt
+        'Public ProjektXPeriod_man As Integer 'posps spinnerei, unbenutzt
+        Public OberflächenbeschaffenheitTop As String
+        Public OberflächenbeschaffenheitButton As String
+        Public BeschichtungTop As String
+        Public BeschichtungButton As String
     End Class
     Public SystemTyp As Styp
 
@@ -293,12 +298,16 @@ Module StartCode
     Public Sub ReadData()
         EnsureArraysInitialized()
         Dim connectionString = "Data Source=(localdb)\mssqllocaldb;Initial Catalog=BrexAccess;Integrated Security=True"
+        If WindowsIdentity.GetCurrent().Name.Equals("F01\mdehwck") Then 'ToDo...
+            connectionString = "Data Source=.;Initial Catalog=BrexAccess;Integrated Security=True;TrustServerCertificate=True"
+        End If
         Using connection = New SqlConnection(connectionString)
             connection.Open()
             ReadElemente(connection)
             ZweiScheiben()
             ReadKonstanten(connection)
             ReadBeispielAnlagen(connection)
+            ReadArtikeldaten(connection, "900025")
         End Using
         Console.WriteLine("Hier später die Pick_It Daten Laden")
         Sys(1).S(1) = "Typ('typ')"
@@ -306,14 +315,51 @@ Module StartCode
         Sys(1).S(4) = "Typ('beschlsas')" & " " & "Typ('oberfllsas')"
     End Sub
 
+    Private Sub ReadArtikeldaten(connection As SqlConnection, artikelNr As String)
+        Dim command = New SqlCommand("SELECT * from Artikel where  ArtNr like '" & artikelNr & "'", connection) ' "SELECT * FROM art_de_en WHERE (hersteller = 'damussnureinANDrein' or (hersteller like '%siegling%' and (typenreihe = 'transilon' or typenreihe = 'transvent'))  or (hersteller like '%siegling%' and (typenreihe = 'extremultus'))  ) ORDER BY artnr"
+
+        Using reader = command.ExecuteReader()
+            reader.Read()
+            SystemTyp.Artnr = reader("Artnr")
+            SystemTyp.Typenreihe = reader("Typenreihe")
+            SystemTyp.Gewicht = reader("Gewicht")
+            SystemTyp.Dicke = reader("Dicke")
+            SystemTyp.Kraftdehnung = 0.0 'Wird im laufe des Programms berechnet oder gesetzt
+            SystemTyp.KraftdehnungMode = 0.0 'Wird im laufe des Programms berechnet oder gesetzt
+            SystemTyp.Name = "E  8/2 U0/V5 grün -> Value nur zum testen"
+
+            'Mal schauen ob wir die brauchen:
+            'SystemTyp.ACX = reader("ACX")
+            'SystemTyp.MinLng = reader("MinLng")
+            'SystemTyp.MinBrt = reader("MinBrt")
+            'SystemTyp.Zugtraeger = reader("Zugtraeger")
+            'SystemTyp.rho = reader("rho")
+            'SystemTyp.Zahnabstand = reader("Zahnabstand")
+            'SystemTyp.RZ = reader("RZ")
+            'SystemTyp.Verbindung01 = reader("Verbindung01")
+
+            SystemTyp.BeschichtungTop = "Polyvinylchlorid (0.5 mm) -> Value nur zum testen" 'reader("beschtsfs")
+            SystemTyp.BeschichtungButton = "Polyurethan-Imprägnierung -> Value nur zum testen"  'reader("beschlsas")
+            SystemTyp.OberflächenbeschaffenheitTop = "Glatt (0.5 mm) -> Value nur zum testen"  'reader("oberfltsfs")
+            SystemTyp.OberflächenbeschaffenheitButton = "Gewebe -> Value nur zum testen"  'reader("oberfllsas")
+
+            Sys(1).S(1) = SystemTyp.Name
+            Sys(1).S(3) = SystemTyp.BeschichtungTop & " " & SystemTyp.OberflächenbeschaffenheitTop
+            Sys(1).S(4) = SystemTyp.BeschichtungButton & " " & SystemTyp.OberflächenbeschaffenheitButton
+
+        End Using
+    End Sub
+
     Private Sub ReadKonstanten(connection As SqlConnection)
         Dim command = New SqlCommand("SELECT * from Konstanten ORDER BY nummer", connection)
         Using reader = command.ExecuteReader()
+            Dim i As Integer
             While reader.Read()
-                Kst(reader("Nummer")).zuEigenschaft = reader("zu_Eigenschaft")
-                Kst(reader("Nummer")).ID = reader("Nummer")
-                Kst(reader("Nummer")).Bezeichnung = reader("bezeichnung")
-                Kst(reader("Nummer")).Einstellung = reader("einstellung")
+                i = reader("nummer")
+                Kst(i).ID = i
+                Kst(i).zuEigenschaft = reader("zu_Eigenschaft")
+                Kst(i).Bezeichnung = reader("bezeichnung")
+                Kst(i).Einstellung = reader("einstellung")
             End While
         End Using
     End Sub
@@ -338,12 +384,14 @@ Module StartCode
     Private Sub ReadElemente(connection As SqlConnection)
         Dim command = New SqlCommand("SELECT * from Elemente_a", connection)
         Using reader = command.ExecuteReader()
+            Dim i As Integer
             While reader.Read()
-                If IsDefined(reader("eigenschaft")) Then El(reader("nummer")).Eigenschaft = reader("eigenschaft")
-                If IsDefined(reader("einheit")) Then El(reader("nummer")).Einheit = reader("einheit")
-                If IsDefined(reader("Feldart")) Then El(reader("nummer")).Feldart = reader("Feldart")
-                If IsDefined(reader("minimum")) Then El(reader("nummer")).Minimum = reader("minimum")
-                If IsDefined(reader("maximum")) Then El(reader("nummer")).Maximum = reader("maximum")
+                i = reader("nummer")
+                If IsDefined(reader("eigenschaft")) Then El(i).Eigenschaft = reader("eigenschaft")
+                If IsDefined(reader("einheit")) Then El(i).Einheit = reader("einheit")
+                If IsDefined(reader("Feldart")) Then El(i).Feldart = reader("Feldart")
+                If IsDefined(reader("minimum")) Then El(i).Minimum = reader("minimum")
+                If IsDefined(reader("maximum")) Then El(i).Maximum = reader("maximum")
                 For i = 6 To 27
                     If IsDefined(reader(i)) Then El(reader("nummer")).Eig(i) = reader(i)
                 Next i
@@ -365,6 +413,7 @@ Module StartCode
         For i = 1 To 12
             Templates(i) = New AnlagenTemplate()
         Next
+        SystemTyp = New Styp()
     End Sub
 
     Public Function IsDefined(value As Object) As Boolean
