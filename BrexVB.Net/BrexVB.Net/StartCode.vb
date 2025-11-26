@@ -66,6 +66,12 @@ Module StartCode
         Public Lang As String ' beginnt mit 20
     End Class
 
+    Public Class AnlagenTemplate
+        Public Bezeichnung As String
+        Public Anlage As String
+    End Class
+    Public Templates(12) As AnlagenTemplate
+
     'cheaten
     Public Admin As Boolean
 
@@ -292,6 +298,7 @@ Module StartCode
             ReadElemente(connection)
             ZweiScheiben()
             ReadKonstanten(connection)
+            ReadBeispielAnlagen(connection)
         End Using
         Console.WriteLine("Hier später die Pick_It Daten Laden")
         Sys(1).S(1) = "Typ('typ')"
@@ -307,6 +314,18 @@ Module StartCode
                 Kst(reader("Nummer")).ID = reader("Nummer")
                 Kst(reader("Nummer")).Bezeichnung = reader("bezeichnung")
                 Kst(reader("Nummer")).Einstellung = reader("einstellung")
+            End While
+        End Using
+    End Sub
+
+    Private Sub ReadBeispielAnlagen(connection As SqlConnection)
+        Dim command = New SqlCommand("SELECT * from Beispielanlagen ORDER BY Bezeichnung", connection)
+        Using reader = command.ExecuteReader()
+            Dim index As Integer = 1
+            While reader.Read()
+                Templates(index).Bezeichnung = reader("Bezeichnung")
+                Templates(index).Anlage = reader("Anlage")
+                index += 1
             End While
         End Using
     End Sub
@@ -342,6 +361,9 @@ Module StartCode
         Next
         For i = 1 To Maxelementezahl
             Sys(i) = New S()
+        Next
+        For i = 1 To 12
+            Templates(i) = New AnlagenTemplate()
         Next
     End Sub
 
