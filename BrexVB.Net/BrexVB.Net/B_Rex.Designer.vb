@@ -73,15 +73,7 @@ Partial Class B_Rex
         If cb.SelectedIndex >= 0 Then
             Dim selectedText = cb.SelectedItem?.ToString()
             System.Diagnostics.Debug.WriteLine($"Template ausgewählt: {selectedText}")
-            ' Beispiel: Zugriff auf Template-Objekt, falls weitere Daten benötigt werden
-            Dim idx = cb.SelectedIndex + 1 ' Items starten bei 0, Templates bei 1
-            If idx >= 1 AndAlso idx <= 12 Then
-                Dim tmpl = StartCode.Templates(idx)
-                If tmpl IsNot Nothing Then
-                    ' TODO: Aktion mit tmpl.Anlage oder anderen Feldern
-                    System.Diagnostics.Debug.WriteLine($"Anlage-Inhalt Länge: {If(tmpl.Anlage, String.Empty).Length}")
-                End If
-            End If
+            StartCode.ProcessTemplate(selectedText)
         End If
     End Sub
 

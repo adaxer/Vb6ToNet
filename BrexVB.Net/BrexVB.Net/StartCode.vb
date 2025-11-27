@@ -76,6 +76,7 @@ Module StartCode
         Public Anlage As String
     End Class
     Public Templates(12) As AnlagenTemplate
+    Public Property CurrentAnlage As AnlagenTemplate
 
     'cheaten
     Public Admin As Boolean
@@ -93,7 +94,8 @@ Module StartCode
     Public EA3 As Integer 'speichert den Anschluß der markierten verbindung
     Public EA4 As Integer
     Public RE2 As Boolean 'gibt die orientierung der laufrichtungspfeile vor
-    Public Anlage(10) As String 'string, der die anlage enthält, zum laden, zum speichern, zum undo und nochmal do, siehe dateiverwaltung
+    ''' Public Anlage(10) As String 'string, der die anlage enthält, zum laden, zum speichern, zum undo und nochmal do, siehe dateiverwaltung
+    ''' Entfernt, nicht gebraucht, stattdessen in CurrentAnlage
 
     'Fukurve
     'public, um sie für die maus im hauptfenster abtastbar zu machen
@@ -116,7 +118,7 @@ Module StartCode
 
     'allgemeine anlagenangaben
     Public AnlageRefresh As Boolean
-
+    Public Zweischeiben As Boolean
     Public Endlos As Boolean
     Public Vollstaendig As Boolean 'wenn alle elemente Vollstaendig sind, endlos wird extra gewertet
 
@@ -211,7 +213,7 @@ Module StartCode
     'del ist zum löschen
     Public Sys As S() = New S(Maxelementezahl) {}
 
-    Public Del As S 'nur zum löschen der anderen
+    Public Del = New S 'nur zum löschen der anderen
 
     Public BarCodeFont As String
 
@@ -304,7 +306,7 @@ Module StartCode
         Using connection = New SqlConnection(connectionString)
             connection.Open()
             ReadElemente(connection)
-            ZweiScheiben()
+            Zwei_Scheiben()
             ReadKonstanten(connection)
             ReadBeispielAnlagen(connection)
             ReadArtikeldaten(connection, "900025")
@@ -326,6 +328,8 @@ Module StartCode
             SystemTyp.Dicke = reader("Dicke")
             SystemTyp.Kraftdehnung = 0.0 'Wird im laufe des Programms berechnet oder gesetzt
             SystemTyp.KraftdehnungMode = 0.0 'Wird im laufe des Programms berechnet oder gesetzt
+
+            '''  todo: Die Strings mit ... zum Testen ... später aus der PickIt-Datenbank holen
             SystemTyp.Name = "E  8/2 U0/V5 grün -> Value nur zum testen"
 
             'Mal schauen ob wir die brauchen:
@@ -376,11 +380,6 @@ Module StartCode
         End Using
     End Sub
 
-    Public Sub ZweiScheiben()
-        ' todo!
-    End Sub
-
-
     Private Sub ReadElemente(connection As SqlConnection)
         Dim command = New SqlCommand("SELECT * from Elemente_a", connection)
         Using reader = command.ExecuteReader()
@@ -404,16 +403,19 @@ Module StartCode
         For i = -10 To Eigenschaftszahl
             El(i) = New ElModel()
         Next
-        For i = 1 To 300
+        For i = 0 To 300
             Kst(i) = New KstModel()
         Next
-        For i = 1 To Maxelementezahl
+        For i = 0 To Maxelementezahl
             Sys(i) = New S()
         Next
-        For i = 1 To 12
+        For i = 0 To 12
             Templates(i) = New AnlagenTemplate()
         Next
         SystemTyp = New Styp()
+        For i = 0 To 20 'userdaten löschen
+            Sam(i) = ""
+        Next i
     End Sub
 
     Public Function IsDefined(value As Object) As Boolean
@@ -426,16 +428,12 @@ Module StartCode
     End Function
 
 
-    Private Sub Auslesen(Optional Mode As Integer) 'anlagenauslegung
+    Private Sub Auslesen() 'anlagenauslegung
         '0 = alles einlesen
         '1 = benutzer/userdaten nicht einlesen, bei beispielanlagen werden dann nicht immer die benutzerdaten ueberschrieben
 
-        Dim i As Double, j As Double, L As Double, M As Double, N As Double, ElNummer As Integer
-        Dim a$, Klammer$, Text$, Wert$
-        'erst klarschiff
-        For i = 0 To 20 'userdaten löschen
-            Sam(i) = ""
-        Next i
+        Dim i As Double, j As Double, L As Double, ElNummer As Integer
+        Dim cursor As String, klammer As String = Nothing, wert As String = Nothing
         '''B_Rex.GrKl(0).Visible = False
         '''B_Rex.GrKl(1).Visible = False
         For i = 0 To Maxelementezahl 'sicher ist sicher
@@ -455,138 +453,144 @@ Module StartCode
         j = 1
         Do
             ElNummer = 0
-            i = InStr(i, Anlage(ActAnlage), "#BOT[")
+            i = InStr(i, CurrentAnlage.Anlage, "#BOT[")
             If i = 0 Then Exit Sub ' das wars, mehr gibts net
-            j = InStr(i + 1, Anlage(ActAnlage), "]")
-            a$ = LCase(Mid(Anlage(ActAnlage), i + 5, j - i - 5))
-            L = InStr(j, Anlage(ActAnlage), "#BOT[") 'hier findet sich der nächste eintrag
+            j = InStr(i + 1, CurrentAnlage.Anlage, "]")
+            cursor = LCase(Mid(CurrentAnlage.Anlage, i + 5, j - i - 5))
+            L = InStr(j, CurrentAnlage.Anlage, "#BOT[") 'hier findet sich der nächste eintrag
             'Sys(ElNummer).Rechts = False
-            Select Case a$
+            Select Case cursor
                 Case "content"
                     Do
                         'If ElNummer = 12 Then Stop
-                        i = InStr(j + 1, Anlage(ActAnlage), "(")
-                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
-                        a$ = Mid(Anlage(ActAnlage), i, j - i)
-                        Call String_auslesen()
+                        i = InStr(j + 1, CurrentAnlage.Anlage, "(")
+                        j = InStr(i + 1, CurrentAnlage.Anlage, "#EOS")
+                        cursor = Mid(CurrentAnlage.Anlage, i, j - i)
+                        String_auslesen(cursor, wert, klammer)
 
-                        Select Case Val(Klammer$)
+                        Select Case Val(klammer)
                             Case 0 'angaben ohne felder
-                                Select Case Klammer$
+                                Select Case klammer
                                     Case "a"
-                                        ElNummer = Val(Wert$) 'wird immer zuerst ausgelesen
+                                        ElNummer = Val(wert) 'wird immer zuerst ausgelesen
                                     Case "b"
-                                        Sys(ElNummer).Element = Wert$
+                                        Sys(ElNummer).Element = wert
                                     Case "c"
-                                        Sys(ElNummer).Height = Val(Wert$)
+                                        Sys(ElNummer).Height = Val(wert)
                                     Case "d"
-                                        Sys(ElNummer).Width = Val(Wert$)
+                                        Sys(ElNummer).Width = Val(wert)
                                     Case "e"
-                                        Sys(ElNummer).Top = Val(Wert$)
+                                        Sys(ElNummer).Top = Val(wert)
                                     Case "f"
-                                        Sys(ElNummer).left = Val(Wert$)
+                                        Sys(ElNummer).left = Val(wert)
                                     Case "g"
-                                        Sys(ElNummer).Tag = Wert$
+                                        Sys(ElNummer).Tag = wert
                                     Case "h"
-                                        Sys(ElNummer).Zugehoerigkeit = Wert$
+                                        Sys(ElNummer).Zugehoerigkeit = wert
                                     Case "i"
-                                        Sys(ElNummer).Verb(1, 1) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(1, 1) = CDBLVAL(wert)
                                     Case "j"
-                                        Sys(ElNummer).Verb(2, 1) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(2, 1) = CDBLVAL(wert)
                                     Case "k"
-                                        Sys(ElNummer).Verb(1, 3) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(1, 3) = CDBLVAL(wert)
                                     Case "l"
-                                        Sys(ElNummer).Verb(2, 3) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(2, 3) = CDBLVAL(wert)
                                     Case "o"
-                                        Sys(ElNummer).Verb(1, 4) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(1, 4) = CDBLVAL(wert)
                                     Case "p"
-                                        Sys(ElNummer).Verb(2, 4) = CDBLVAL(Wert$)
+                                        Sys(ElNummer).Verb(2, 4) = CDBLVAL(wert)
                                     Case "m"
-                                        Sys(ElNummer).Rechts = CBool(Val(Wert$))
+                                        Sys(ElNummer).Rechts = CBool(Val(wert))
                                     Case "n"
-                                        Sys(ElNummer).Vollstaendig = CBool(Val(Wert$))
+                                        Sys(ElNummer).Vollstaendig = CBool(Val(wert))
                                 End Select
                             Case Is > 0 'felder zahlen
-                                Sys(ElNummer).E(Val(Klammer$)) = CDBLVAL(Wert$)
-                                If InStr(1, Wert$, "#*") > 0 Then Sys(ElNummer).B(Val(Klammer$)) = True
-                                If Val(Klammer$) = 82 Then
-                                    SystemTyp.Kraftdehnung = CDBLVAL(Wert$) 'kann sd, fw, k1 oder selbstgewaehlt sein
+                                Sys(ElNummer).E(Val(klammer)) = CDBLVAL(wert)
+                                If InStr(1, wert, "#*") > 0 Then Sys(ElNummer).B(Val(klammer)) = True
+                                If Val(klammer) = 82 Then
+                                    SystemTyp.Kraftdehnung = CDBLVAL(wert) 'kann sd, fw, k1 oder selbstgewaehlt sein
                                     SystemTyp.KraftdehnungMode = 2
                                 End If
                             Case Is < 0 'felder texte
-                                Sys(ElNummer).S(Abs(Val(Klammer$))) = Wert$
-                                If InStr(1, Wert$, "#*") > 0 Then Sys(ElNummer).B(Val(Klammer$)) = True
+                                Sys(ElNummer).S(Math.Abs(Val(klammer))) = wert
+                                If InStr(1, wert, "#*") > 0 Then Sys(ElNummer).B(Val(klammer)) = True
                         End Select
-                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") > L Or InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                    Loop Until InStr(j + 1, CurrentAnlage.Anlage, "(") > L Or InStr(j + 1, CurrentAnlage.Anlage, "(") = 0 'kommt nix mehr
                 'Stop
                 Case "general properties"
                     Do
                         i = j + 6
-                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
-                        a$ = Mid(Anlage(ActAnlage), i, j - i)
-                        Call String_auslesen()
+                        j = InStr(i + 1, CurrentAnlage.Anlage, "#EOS")
+                        cursor = Mid(CurrentAnlage.Anlage, i, j - i)
+                        Call String_auslesen(cursor, wert, klammer)
 
-                        Select Case LCase(Klammer$)
+                        Select Case LCase(klammer)
                             Case "a" 'angaben ohne felder
-                                Reversieren = CBool(Val(Wert$))
+                                Reversieren = CBool(Val(wert))
                             Case "b"
-                                Endlos = CBool(Val(Wert$))
+                                Endlos = CBool(Val(wert))
                             Case "c"
-                                Init_B_Rex_rho_Wert_Fehler = Val(Wert$)
+                                Init_B_Rex_rho_Wert_Fehler = Val(wert)
                             Case "d"
-                                Init_B_Rex_FwFu_Fehler = Val(Wert$)
+                                Init_B_Rex_FwFu_Fehler = Val(wert)
                             Case "e"
-                                Init_B_Rex_KraftUebertrkontr = Val(Wert$)
+                                Init_B_Rex_KraftUebertrkontr = Val(wert)
                             Case "f"
-                                Init_B_Rex_WoelbDurchb = Val(Wert$)
+                                Init_B_Rex_WoelbDurchb = Val(wert)
                             Case "g"
-                                Init_B_Rex_Minddurchmkontr = Val(Wert$)
+                                Init_B_Rex_Minddurchmkontr = Val(wert)
                             Case "h"
                             Case "i"
-                                SystemTyp.Kraftdehnung = CDBLVAL(Wert$)
+                                SystemTyp.Kraftdehnung = CDBLVAL(wert)
                             Case "j"
-                                SystemTyp.KraftdehnungMode = Val(Wert$)
+                                SystemTyp.KraftdehnungMode = Val(wert)
                             Case "k"
-                                Init_B_Rex_Aging = Val(Wert$)
+                                Init_B_Rex_Aging = Val(wert)
                             Case "l"
-                                Init_B_Rex_Pairing = Val(Wert$)
+                                Init_B_Rex_Pairing = Val(wert)
                         End Select
-                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") > L Or InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                    Loop Until InStr(j + 1, CurrentAnlage.Anlage, "(") > L Or InStr(j + 1, CurrentAnlage.Anlage, "(") = 0 'kommt nix mehr
                 Case "customer/user"
                     Do
                         'If ElNummer = 12 Then Stop
                         i = j + 5
-                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
-                        a$ = Mid(Anlage(ActAnlage), i, j - i)
-                        Call String_auslesen()
-                        If Mode = 0 Then Sam(Val(Klammer$)) = Wert$
-                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                        j = InStr(i + 1, CurrentAnlage.Anlage, "#EOS")
+                        cursor = Mid(CurrentAnlage.Anlage, i, j - i)
+                        Call String_auslesen(cursor, wert, klammer)
+                    Loop Until InStr(j + 1, CurrentAnlage.Anlage, "(") = 0 'kommt nix mehr
                 Case Else
                     i = i + 1
             End Select
             If ElNummer > Maxelementindex Then Maxelementindex = ElNummer
 
-        Loop Until InStr(j, Anlage(ActAnlage), "#BOT[") = 0 'end of file
+        Loop Until InStr(j, CurrentAnlage.Anlage, "#BOT[") = 0 'end of file
 
         'A = CDbl("123,234E-04")
         Exit Sub
     End Sub
 
-    Private Sub String_auslesen()
-        N = InStr(1, a$, "(")
-        M = InStr(1, a$, ")")
+    Private Sub String_auslesen(ByVal input As String, ByRef Wert As String, ByRef Klammer As String)
+        Dim N As Integer
+        Dim M As Integer
+        Dim Text As String = Nothing
+
+        N = InStr(1, input, "(")
+        M = InStr(1, input, ")")
         If N > 0 Then
-            Klammer$ = Mid(a$, N + 1, M - N - 1) 'gibts überhaupt ne klammer?
+            Klammer = Mid(input, N + 1, M - N - 1) 'gibts überhaupt ne klammer?
         Else
             M = 0
         End If
         N = M
-        M = InStr(N + 1, a$, "=")
-        Text$ = Mid(a$, N + 1, M - N - 1)
+        M = InStr(N + 1, input, "=")
+        Text = Mid(input, N + 1, M - N - 1)
         N = M
-        M = Len(a$)
-        Wert$ = Mid(a$, N + 1, M - N)
-        Return
+        M = Len(input)
+        Wert = Mid(input, N + 1, M - N)
     End Sub
 
+    Friend Sub ProcessTemplate(templateName As String)
+        CurrentAnlage = Templates.Where(Function(t) t IsNot Nothing).SingleOrDefault(Function(t) t.Bezeichnung = templateName)
+        Auslesen()
+    End Sub
 End Module
