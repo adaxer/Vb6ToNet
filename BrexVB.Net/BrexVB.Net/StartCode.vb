@@ -425,4 +425,168 @@ Module StartCode
         Return True
     End Function
 
+
+    Private Sub Auslesen(Optional Mode As Integer) 'anlagenauslegung
+        '0 = alles einlesen
+        '1 = benutzer/userdaten nicht einlesen, bei beispielanlagen werden dann nicht immer die benutzerdaten ueberschrieben
+
+        Dim i As Double, j As Double, L As Double, M As Double, N As Double, ElNummer As Integer
+        Dim a$, Klammer$, Text$, Wert$
+        'erst klarschiff
+        For i = 0 To 20 'userdaten löschen
+            Sam(i) = ""
+        Next i
+        '''B_Rex.GrKl(0).Visible = False
+        '''B_Rex.GrKl(1).Visible = False
+        For i = 0 To Maxelementezahl 'sicher ist sicher
+            Sys(i) = Del 'falls jemand sys(0) verhunzt hat, das eigentlich hierfür ist
+        Next i
+        Sys(1).Element = "Band" 'damits aufgerufen wird, ob was drinsteht oder nicht
+        Sys(2).Element = "Band" 'damits mit gespeichert wird
+        Sys(1).Tag = "301" 'damits aufgerufen wird, ob was drinsteht oder nicht
+
+        SystemTyp.Kraftdehnung = 0 'kann sd, fw, k1 oder selbstgewaehlt sein
+        SystemTyp.KraftdehnungMode = 0
+        Init_B_Rex_Pairing = 1 'alte anlagen sind immer noch mit pairing
+
+
+        Maxelementindex = 10
+        i = 1
+        j = 1
+        Do
+            ElNummer = 0
+            i = InStr(i, Anlage(ActAnlage), "#BOT[")
+            If i = 0 Then Exit Sub ' das wars, mehr gibts net
+            j = InStr(i + 1, Anlage(ActAnlage), "]")
+            a$ = LCase(Mid(Anlage(ActAnlage), i + 5, j - i - 5))
+            L = InStr(j, Anlage(ActAnlage), "#BOT[") 'hier findet sich der nächste eintrag
+            'Sys(ElNummer).Rechts = False
+            Select Case a$
+                Case "content"
+                    Do
+                        'If ElNummer = 12 Then Stop
+                        i = InStr(j + 1, Anlage(ActAnlage), "(")
+                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
+                        a$ = Mid(Anlage(ActAnlage), i, j - i)
+                        Call String_auslesen()
+
+                        Select Case Val(Klammer$)
+                            Case 0 'angaben ohne felder
+                                Select Case Klammer$
+                                    Case "a"
+                                        ElNummer = Val(Wert$) 'wird immer zuerst ausgelesen
+                                    Case "b"
+                                        Sys(ElNummer).Element = Wert$
+                                    Case "c"
+                                        Sys(ElNummer).Height = Val(Wert$)
+                                    Case "d"
+                                        Sys(ElNummer).Width = Val(Wert$)
+                                    Case "e"
+                                        Sys(ElNummer).Top = Val(Wert$)
+                                    Case "f"
+                                        Sys(ElNummer).left = Val(Wert$)
+                                    Case "g"
+                                        Sys(ElNummer).Tag = Wert$
+                                    Case "h"
+                                        Sys(ElNummer).Zugehoerigkeit = Wert$
+                                    Case "i"
+                                        Sys(ElNummer).Verb(1, 1) = CDBLVAL(Wert$)
+                                    Case "j"
+                                        Sys(ElNummer).Verb(2, 1) = CDBLVAL(Wert$)
+                                    Case "k"
+                                        Sys(ElNummer).Verb(1, 3) = CDBLVAL(Wert$)
+                                    Case "l"
+                                        Sys(ElNummer).Verb(2, 3) = CDBLVAL(Wert$)
+                                    Case "o"
+                                        Sys(ElNummer).Verb(1, 4) = CDBLVAL(Wert$)
+                                    Case "p"
+                                        Sys(ElNummer).Verb(2, 4) = CDBLVAL(Wert$)
+                                    Case "m"
+                                        Sys(ElNummer).Rechts = CBool(Val(Wert$))
+                                    Case "n"
+                                        Sys(ElNummer).Vollstaendig = CBool(Val(Wert$))
+                                End Select
+                            Case Is > 0 'felder zahlen
+                                Sys(ElNummer).E(Val(Klammer$)) = CDBLVAL(Wert$)
+                                If InStr(1, Wert$, "#*") > 0 Then Sys(ElNummer).B(Val(Klammer$)) = True
+                                If Val(Klammer$) = 82 Then
+                                    SystemTyp.Kraftdehnung = CDBLVAL(Wert$) 'kann sd, fw, k1 oder selbstgewaehlt sein
+                                    SystemTyp.KraftdehnungMode = 2
+                                End If
+                            Case Is < 0 'felder texte
+                                Sys(ElNummer).S(Abs(Val(Klammer$))) = Wert$
+                                If InStr(1, Wert$, "#*") > 0 Then Sys(ElNummer).B(Val(Klammer$)) = True
+                        End Select
+                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") > L Or InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                'Stop
+                Case "general properties"
+                    Do
+                        i = j + 6
+                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
+                        a$ = Mid(Anlage(ActAnlage), i, j - i)
+                        Call String_auslesen()
+
+                        Select Case LCase(Klammer$)
+                            Case "a" 'angaben ohne felder
+                                Reversieren = CBool(Val(Wert$))
+                            Case "b"
+                                Endlos = CBool(Val(Wert$))
+                            Case "c"
+                                Init_B_Rex_rho_Wert_Fehler = Val(Wert$)
+                            Case "d"
+                                Init_B_Rex_FwFu_Fehler = Val(Wert$)
+                            Case "e"
+                                Init_B_Rex_KraftUebertrkontr = Val(Wert$)
+                            Case "f"
+                                Init_B_Rex_WoelbDurchb = Val(Wert$)
+                            Case "g"
+                                Init_B_Rex_Minddurchmkontr = Val(Wert$)
+                            Case "h"
+                            Case "i"
+                                SystemTyp.Kraftdehnung = CDBLVAL(Wert$)
+                            Case "j"
+                                SystemTyp.KraftdehnungMode = Val(Wert$)
+                            Case "k"
+                                Init_B_Rex_Aging = Val(Wert$)
+                            Case "l"
+                                Init_B_Rex_Pairing = Val(Wert$)
+                        End Select
+                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") > L Or InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                Case "customer/user"
+                    Do
+                        'If ElNummer = 12 Then Stop
+                        i = j + 5
+                        j = InStr(i + 1, Anlage(ActAnlage), "#EOS")
+                        a$ = Mid(Anlage(ActAnlage), i, j - i)
+                        Call String_auslesen()
+                        If Mode = 0 Then Sam(Val(Klammer$)) = Wert$
+                    Loop Until InStr(j + 1, Anlage(ActAnlage), "(") = 0 'kommt nix mehr
+                Case Else
+                    i = i + 1
+            End Select
+            If ElNummer > Maxelementindex Then Maxelementindex = ElNummer
+
+        Loop Until InStr(j, Anlage(ActAnlage), "#BOT[") = 0 'end of file
+
+        'A = CDbl("123,234E-04")
+        Exit Sub
+    End Sub
+
+    Private Sub String_auslesen()
+        N = InStr(1, a$, "(")
+        M = InStr(1, a$, ")")
+        If N > 0 Then
+            Klammer$ = Mid(a$, N + 1, M - N - 1) 'gibts überhaupt ne klammer?
+        Else
+            M = 0
+        End If
+        N = M
+        M = InStr(N + 1, a$, "=")
+        Text$ = Mid(a$, N + 1, M - N - 1)
+        N = M
+        M = Len(a$)
+        Wert$ = Mid(a$, N + 1, M - N)
+        Return
+    End Sub
+
 End Module
