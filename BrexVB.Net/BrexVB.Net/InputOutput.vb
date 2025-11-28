@@ -1,4 +1,5 @@
 ﻿Imports System.IO
+Imports System.Text
 Imports System.Text.Json
 
 Module InputOutput
@@ -58,7 +59,8 @@ Module InputOutput
 
     Public Function ReadBrexDump(filePath As String) As BrexParameters
         Dim options = New JsonSerializerOptions With {.PropertyNameCaseInsensitive = True}
-        Dim dump = JsonSerializer.Deserialize(Of BrexDumpDto)(File.ReadAllText(filePath), options)
+        Dim enc = Encoding.GetEncoding(Threading.Thread.CurrentThread.CurrentCulture.TextInfo.ANSICodePage)
+        Dim dump = JsonSerializer.Deserialize(Of BrexDumpDto)(File.ReadAllText(filePath, enc), options)
         Return ApplyDumpToParameters(dump)
     End Function
 

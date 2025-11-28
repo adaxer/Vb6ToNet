@@ -132,7 +132,7 @@ Module StartCode
         Public Feldart As String 'liste oder text
         Public Minimum As Single
         Public Maximum As Single
-        Public Eig(30) As String
+        Public Property Eig() As String() = Enumerable.Repeat(String.Empty, 31).ToArray()
         '1 sind Muß-Eingaben
         '2 sind Kann-Eingaben
         '3 sind Ergebnisse
@@ -458,7 +458,7 @@ Module StartCode
         '''B_Rex.GrKl(0).Visible = False
         '''B_Rex.GrKl(1).Visible = False
         For i = 0 To Maxelementezahl 'sicher ist sicher
-            Sys(i) = Del 'falls jemand sys(0) verhunzt hat, das eigentlich hierfür ist
+            Sys(i) = New S 'falls jemand sys(0) verhunzt hat, das eigentlich hierfür ist
         Next i
         Sys(1).Element = "Band" 'damits aufgerufen wird, ob was drinsteht oder nicht
         Sys(2).Element = "Band" 'damits mit gespeichert wird

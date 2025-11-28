@@ -637,7 +637,7 @@ Module CodeCalc
             '''Destination = B_Rex.FuKurve
             LetzteBerechnung = True
             ''' If Auflegemodus = 4 Then Grafik(False) 'feder/gewicht, spitzenlast braucht die info zum einregeln, einmal mehr ausführen
-            Destination.Cls 'hier wird immer fukurve aufgebaut, nicht der printer oder sie seitenvorschau, also cls hier
+            '''Destination.Cls 'hier wird immer fukurve aufgebaut, nicht der printer oder sie seitenvorschau, also cls hier
             '''   Grafik(False)
             LetzteBerechnung = False
             'dort wird zwar auch die auflegedehnung neu gemacht, aber mit zeichnen und genau
