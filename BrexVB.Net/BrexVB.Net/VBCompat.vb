@@ -78,13 +78,25 @@ Public Module VBCompat
         End If
     End Function
 
-    Public Function CDBLVAL(a$) As Double
-        If a$ = "" Then
-            CDBLVAL = 0
-        Else
-            a$ = Replace(a$, ",", ".")
-            CDBLVAL = Val(a$)
-            'cdbl schlägt aus unerfindlichen gründen nicht selten fehl
-        End If
+    Public Function Sin(ByVal x As Double) As Double
+        Return Math.Sin(x)
     End Function
+
+    Public Function Sqr(ByVal x As Double) As Double
+        Return Math.Sqrt(x)
+    End Function
+
+    Public Function Abs(ByVal x As Double) As Double
+        Return Math.Abs(x)
+    End Function
+
+    Public Function Abs(ByVal x As Integer) As Integer
+        Return Math.Abs(x)
+    End Function
+
+
+    ' ReplaceStrings 
+    ' InStr\(\s*([^,()]+)\s*,\s*("([^"]*)"|'([^']*)'|[^,()]+)\s*\)\s*>\s*0 => $1.Contains($2)   ' Instr(a,b) > 0  => a.Contains(b)
+    ' Chr$(13) & Chr$(10) => Environment.NewLine
+    ' Abs(x) => Math.Abs(x)
 End Module

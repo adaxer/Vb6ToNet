@@ -103,7 +103,7 @@ Public Sub Rechnungssteuerung(Mode As String)
 'C = neuauslegung
 
 Dim M As Double
-Dim i As Integer, P As Integer, j As Integer, K As Integer
+Dim i As Integer, P As Integer, j As Integer, k As Integer
 
 Dim Masse As Double, Memo As Double, H As Double, Errfreq As Double
 Dim FuerstesMerk As Double
@@ -112,42 +112,42 @@ Dim Datenaenderung$
 Dim BO As Boolean
 
 
-
+Call startcode.DumpData
 Fehlerwert = -100 'heisst so viel wie nicht drueber nachgedacht, weil e noch angaben fehlen
 
 
 'Endlospruefung
     If InStr(Mode, "E") > 0 Then
         Endlos = False
-        K = 9
+        k = 9
         Do
-            K = K + 1
-        Loop Until Sys(K).Element <> "" Or K > Maxelementindex
-        j = K 'erstes element merken
-        If Sys(K).Verb(1, 1) > 0 Then
+            k = k + 1
+        Loop Until Sys(k).Element <> "" Or k > Maxelementindex
+        j = k 'erstes element merken
+        If Sys(k).Verb(1, 1) > 0 Then
             P = 1
         Else
             P = 2
         End If
         Do
-            i = K ' altes element merken
-            K = Sys(K).Verb(P, 1) 'und nächstes bestimmen
-            If Sys(K).Verb(1, 1) = i Then 'voreinstellungen für neuen durchlauf
+            i = k ' altes element merken
+            k = Sys(k).Verb(P, 1) 'und nächstes bestimmen
+            If Sys(k).Verb(1, 1) = i Then 'voreinstellungen für neuen durchlauf
                 P = 2
             Else
                 P = 1
             End If
-        Loop Until K = j Or Sys(K).Verb(1, 1) = 0 Or Sys(K).Verb(2, 1) = 0
-        If K = j Then Endlos = True  'einmal ohne unterbrechnung rum
+        Loop Until k = j Or Sys(k).Verb(1, 1) = 0 Or Sys(k).Verb(2, 1) = 0
+        If k = j Then Endlos = True  'einmal ohne unterbrechnung rum
     End If
 
 'Vollstaendigkeitskontrolle
     If InStr(Mode, "V") > 0 Or InStr(Mode, "B") > 0 Then
         Dim ElVollst As Boolean
         Vollstaendig = True
-        K = Maxelementindex
-        If InStr(Mode, "B") > 0 Then K = 1 'nur das band
-        For i = 1 To K 'elemente zählen
+        k = Maxelementindex
+        If InStr(Mode, "B") > 0 Then k = 1 'nur das band
+        For i = 1 To k 'elemente zählen
             If i = 1 Or i > 9 Then
                 If Sys(i).Element <> "" Then  '2 speichert die aus der datenbank übernommenen bandeigenschaften
                     ElVollst = True
@@ -302,7 +302,7 @@ Spitzenlastvorhanden = False
             'wölbhöhe empfehlen
             Sys(M).E(7) = 0
             'abgeschaltet 201910, das war ne eigene formel
-            Select Case LCase(Sys(1).S(5))
+            Select Case LCase(Sys(1).s(5))
             
                 Case "extremultus"
                     'die elastischen etwas anders
@@ -586,7 +586,7 @@ Spitzenlastvorhanden = False
             'die farbliche kennzeichnung der Fukurve stimmt dann nicht mehr, weil nur eine stufe von 40, die ampel unten aber schon
             Fuerstes = 0 + j * Memo
             Call Berechnung
-            GoSub Kontrollrechnungen 'um die beurteilung komplett zu machen
+            Call Kontrollrechnungen(k, M, mue, Errfreq) 'um die beurteilung komplett zu machen
             If AuflTrumKraft < 0 Then AuflTrumKraft = 0
             Fehlerverlauf(1, j) = AuflTrumKraft 'erf. auflegedehnung als kraft
             Fehlerverlauf(2, j) = Fehlerwert 'und der dazugehörige fehlerwert
@@ -677,7 +677,7 @@ Spitzenlastvorhanden = False
     
     If AuflTrumKraft = 0 Then AuflTrumKraft = 0.0001 'sonst gefahr nulldivision
     
-    GoSub Kontrollrechnungen 'noch fehlerwert und texte der gewählten konf. ermitteln
+    Call Kontrollrechnungen(k, M, mue, Errfreq) 'noch fehlerwert und texte der gewählten konf. ermitteln
         
     'datenänderung ist immer leer, wenn das programm hier ankommt
     'änderungen an den Banddaten? Nicht durchgehen lassen, für meinen persönlichen Schlaf
@@ -687,7 +687,7 @@ Spitzenlastvorhanden = False
     If Abs(Sys(1).E(79)) <> Abs(Sys(2).E(79)) Then Datenaenderung$ = Datenaenderung$ & Lang_Res(685) & Lang_Res(682) & Chr$(13) & Chr$(10)
     If Abs(Sys(1).E(81)) <> Abs(Sys(2).E(81)) Then Datenaenderung$ = Datenaenderung$ & Lang_Res(686) & Lang_Res(682) & Chr$(13) & Chr$(10)
     
-    If left(Sys(1).S(2), 1) = "9" Then 'transilon
+    If left(Sys(1).s(2), 1) = "9" Then 'transilon
         
         Select Case SystemTyp.KraftdehnungMode
             Case 4 'selbstgewaehlt
@@ -706,13 +706,13 @@ Spitzenlastvorhanden = False
     End If
     
     'gibts da n element, das garnicht mit der anlage verbunden ist?
-        For K = 9 To Maxelementindex
-            If Sys(K).Element <> "" And (left(Sys(K).Tag, 1) = "0" Or left(Sys(K).Tag, 1) = "1") Then
-                If Sys(K).Verb(1, 1) = 0 Or Sys(K).Verb(2, 1) = 0 Then
-                    Fehler$ = Fehler$ & Lang_Res(710) & K & Lang_Res(711) & Chr$(13) & Chr$(10)   '- hinweis: element...ist nicht korrekt in ihre anlage eingebunden
+        For k = 9 To Maxelementindex
+            If Sys(k).Element <> "" And (left(Sys(k).Tag, 1) = "0" Or left(Sys(k).Tag, 1) = "1") Then
+                If Sys(k).Verb(1, 1) = 0 Or Sys(k).Verb(2, 1) = 0 Then
+                    Fehler$ = Fehler$ & Lang_Res(710) & k & Lang_Res(711) & Chr$(13) & Chr$(10)   '- hinweis: element...ist nicht korrekt in ihre anlage eingebunden
                 End If
             End If
-        Next K
+        Next k
     
 
 
@@ -722,19 +722,20 @@ Spitzenlastvorhanden = False
         B_Rex.Fehlerliste = Datenfehler$ & Datenaenderung$ & Fehler$ & SchwTransFehler$ & SchwLongFehler$
     End If
 Exit Sub
+End Sub
 
-Kontrollrechnungen:
+Public Sub Kontrollrechnungen(k As Integer, M As Double, mue As Double, Errfreq As Double)
     'bei iterationen kann man sich das hier sparen, daher auslagerung hierher
     'KI muss hier für jede rechnungsversion einmal rein, um anlage zu beurteilen
     Dim Flaechenmoment As Double
     Dim WellenbelastungFwFu As Double
     Dim Q As Double
     'kontrollrechnungen nach fertiger berechnung
-    For K = 9 To Maxelementindex
-        If Sys(K).E(13) > 5 Then  'umschlingung, also nur durchmesser
-            Flaechenmoment = Sys(K).E(99)
+    For k = 9 To Maxelementindex
+        If Sys(k).E(13) > 5 Then  'umschlingung, also nur durchmesser
+            Flaechenmoment = Sys(k).E(99)
             WellenbelastungFwFu = 0
-            If Sys(K).E(120) > 0 Then Flaechenmoment = Sys(K).E(120)
+            If Sys(k).E(120) > 0 Then Flaechenmoment = Sys(k).E(120)
             
             'erstmal alle wellenbelastungen ermitteln
                 
@@ -744,9 +745,9 @@ Kontrollrechnungen:
                     'es bildet sich als summe über das gesamte band eine zus. dehnung,
                     'um die das band an jeder stelle belastet und jede scheibe entlastet wird.
                     'die summe ist also an jeder scheibe relevant, nicht der dort entstehende anteil
-                    Q = Sys(K).Furein ' - 2 * Fliehkraftsumme
-                    M = Sys(K).Furaus ' - 2 * Fliehkraftsumme
-                    Sys(K).E(52) = Sqr(Q ^ 2 + M ^ 2 - 2 * Q * M * Cos(Sys(K).E(13) / 180 * PI)) - Sys(K).E(51) '201507 fliehkraft von wellenbelastung abziehen, das ist kritische stelle, band dehnt sich nicht (bisher falsch angenommen)
+                    Q = Sys(k).Furein ' - 2 * Fliehkraftsumme
+                    M = Sys(k).Furaus ' - 2 * Fliehkraftsumme
+                    Sys(k).E(52) = Sqr(Q ^ 2 + M ^ 2 - 2 * Q * M * Cos(Sys(k).E(13) / 180 * PI)) - Sys(k).E(51) '201507 fliehkraft von wellenbelastung abziehen, das ist kritische stelle, band dehnt sich nicht (bisher falsch angenommen)
                     
                     '*2 wegen belastung es bandes durch fliehkraft + entlastung scheibe, also 2mal
                     'auf jeden fall ist das ergebnis so überaus schlüssig
@@ -754,20 +755,20 @@ Kontrollrechnungen:
                     'bsp: 0,8 im trum, davon 0,6 fliehkraft, also 0,2 max. auflegedehnung, diese summe stimmt nur mit der 2*
                    
                     '202004 ueber 180 grad nicht die kleiner werdende wellenbelastung verwenden, sondern summer F1 F2
-                    WellenbelastungFwFu = Sys(K).E(52)
-                    If Sys(K).E(13) > 180 Then WellenbelastungFwFu = Q + M 'besser wirds nicht
+                    WellenbelastungFwFu = Sys(k).E(52)
+                    If Sys(k).E(13) > 180 Then WellenbelastungFwFu = Q + M 'besser wirds nicht
                     
                     'kleiner kunstgriff abseits wissenschaftlicher pfade,
                     'damit bei 0-umschlingung auch nichts an der scheibe hängenbleibt:
-                    If Sys(K).E(13) < 90 And Sys(K).E(17) > 0 Then Sys(K).E(52) = Sys(K).E(52) * Sin(Sys(K).E(13) / 180 * PI) - Sys(K).E(51)
+                    If Sys(k).E(13) < 90 And Sys(k).E(17) > 0 Then Sys(k).E(52) = Sys(k).E(52) * Sin(Sys(k).E(13) / 180 * PI) - Sys(k).E(51)
                     
                     'falls es null ist, was eigentlich nicht geht ;-)
                     'hebts aufgrund der fliehkraft von der scheibe ab
                     'zumindest einseitig bleibt keine restdehnung
-                    If Sys(K).E(52) <= 0 Or Q <= 0 Or M <= 0 Then '52 = dynamische Wellenbelastung
+                    If Sys(k).E(52) <= 0 Or Q <= 0 Or M <= 0 Then '52 = dynamische Wellenbelastung
                         If Sys(1).E(20) > 10 Then 'erst ab ernstzunehmenden geschwindikeiten zuschalten
-                            Sys(K).E(52) = 1 'negative wellenbelastung kann's nicht geben
-                            Fehler$ = Fehler$ & Lang_Res(676) & " (" & K & ")." & Chr$(13) & Chr$(10)   '!Das Band hebt aufgrund der Fliehkraft von der Scheibe ab (x).
+                            Sys(k).E(52) = 1 'negative wellenbelastung kann's nicht geben
+                            Fehler$ = Fehler$ & Lang_Res(676) & " (" & k & ")." & Chr$(13) & Chr$(10)   '!Das Band hebt aufgrund der Fliehkraft von der Scheibe ab (x).
                             Fehlerwert = Fehlerwert + 100
                         End If
                     End If
@@ -780,15 +781,15 @@ Kontrollrechnungen:
                     '7 woelbhoehe nach siegling
                     
                     'dazu passend die dynamische durchbiegung
-                        Q = Sqr(Sys(K).E(52) ^ 2 + (9.81 * Sys(K).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
-                        If Flaechenmoment > 0 And Sys(K).E(103) > 0 Then Sys(K).E(101) = (5 * Q * Sys(K).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(K).E(103)).Einstellung)
+                        Q = Sqr(Sys(k).E(52) ^ 2 + (9.81 * Sys(k).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
+                        If Flaechenmoment > 0 And Sys(k).E(103) > 0 Then Sys(k).E(101) = (5 * Q * Sys(k).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(k).E(103)).Einstellung)
                         
                         If Init_B_Rex_WoelbDurchb = 1 And Bandfuehrungvorhanden = True Then 'will er sie ueberhaupt kontrolliert haben?
                             
                             'zylindrische sollen sich nicht zu weit biegen, sonst läuft das Band übereinander
-                                If Sys(K).E(106) > 0 Then 'hat eine wölbhöhe angegeben, also werden wir die auch kontrollieren
-                                    If Sys(K).E(101) > Sys(K).E(106) * 0.6 Then 'wenn er mehr als 0.8 wegbiegt, 202004 auf 0.6 geaendert
-                                        Fehler$ = Fehler$ & Lang_Res(696) & " (" & K & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Lauf geht die Bandführung an Scheibe ... verloren
+                                If Sys(k).E(106) > 0 Then 'hat eine wölbhöhe angegeben, also werden wir die auch kontrollieren
+                                    If Sys(k).E(101) > Sys(k).E(106) * 0.6 Then 'wenn er mehr als 0.8 wegbiegt, 202004 auf 0.6 geaendert
+                                        Fehler$ = Fehler$ & Lang_Res(696) & " (" & k & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Lauf geht die Bandführung an Scheibe ... verloren
                                         Fehlerwert = Fehlerwert + 10
                                     End If
                                 End If
@@ -798,42 +799,42 @@ Kontrollrechnungen:
                 '2. Wellenbelastung bei spitzenlast:
             
                     If Spitzenlastvorhanden = False Then
-                        Sys(K).E(105) = Sys(K).E(52) 'Wellenbelastung gleich der dynamischen
-                        Sys(K).E(104) = Sys(K).E(101) 'durchbiegung auch
+                        Sys(k).E(105) = Sys(k).E(52) 'Wellenbelastung gleich der dynamischen
+                        Sys(k).E(104) = Sys(k).E(101) 'durchbiegung auch
                     Else
-                        Q = Sys(K).FureinSp ' - 2 * Fliehkraftsumme
-                        M = Sys(K).FurausSp ' - 2 * Fliehkraftsumme
-                        Sys(K).E(105) = Sqr(Q ^ 2 + M ^ 2 - 2 * Q * M * Cos(Sys(K).E(13) / 180 * PI))
-                        If Sys(K).E(13) < 90 And Sys(K).E(17) > 0 Then Sys(K).E(105) = Sys(K).E(105) * Sin(Sys(K).E(13) / 180 * PI)
+                        Q = Sys(k).FureinSp ' - 2 * Fliehkraftsumme
+                        M = Sys(k).FurausSp ' - 2 * Fliehkraftsumme
+                        Sys(k).E(105) = Sqr(Q ^ 2 + M ^ 2 - 2 * Q * M * Cos(Sys(k).E(13) / 180 * PI))
+                        If Sys(k).E(13) < 90 And Sys(k).E(17) > 0 Then Sys(k).E(105) = Sys(k).E(105) * Sin(Sys(k).E(13) / 180 * PI)
                         
-                        If Sys(K).E(105) <= 0 Or Q <= 0 Or M <= 0 Then
-                            Sys(K).E(105) = 0 'negative wellenbelastung kann's nicht geben
+                        If Sys(k).E(105) <= 0 Or Q <= 0 Or M <= 0 Then
+                            Sys(k).E(105) = 0 'negative wellenbelastung kann's nicht geben
                             'lassen wir die kirche erstmal im dorf
                                 'Fehler$ = Fehler$ & Lang_Res(676 ) & K & Lang_Res(677) & Chr$(13) & Chr$(10) '!Das Band hebt aufgrund der Fliehkraft von der Scheibe...ab
                                 'Fehlerwert = Fehlerwert + 100
                         End If
                         
                         'dazu passend die durchbiegung
-                        If Sys(K).FureinSp <= 0 Or Sys(K).FurausSp <= 0 Then 'natürlich nur, wenn es keinen slipstick an dieser scheibe gibt
-                            Sys(K).E(104) = 0
+                        If Sys(k).FureinSp <= 0 Or Sys(k).FurausSp <= 0 Then 'natürlich nur, wenn es keinen slipstick an dieser scheibe gibt
+                            Sys(k).E(104) = 0
                         Else
-                            Q = Sqr(Sys(K).E(105) ^ 2 + (9.81 * Sys(K).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
-                            If Flaechenmoment > 0 And Sys(K).E(103) > 0 Then Sys(K).E(104) = (5 * Q * Sys(K).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(K).E(103)).Einstellung)
+                            Q = Sqr(Sys(k).E(105) ^ 2 + (9.81 * Sys(k).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
+                            If Flaechenmoment > 0 And Sys(k).E(103) > 0 Then Sys(k).E(104) = (5 * Q * Sys(k).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(k).E(103)).Einstellung)
                         End If
                         
                         If Init_B_Rex_WoelbDurchb = 1 Then
                             'hat eine wölbhöhe angegeben, also werden wir die auch kontrollieren
-                            If Sys(K).E(106) > 0 And Sys(1).E(95) > 3 Then 'aber einer hochlaufzeit von 5 sekunden
-                                If Sys(K).E(104) > Sys(K).E(106) * 0.5 Then
-                                    Fehler$ = Fehler$ & Lang_Res(700) & " (" & K & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Anfahren geht die Bandführung an Scheibe... verloren
+                            If Sys(k).E(106) > 0 And Sys(1).E(95) > 3 Then 'aber einer hochlaufzeit von 5 sekunden
+                                If Sys(k).E(104) > Sys(k).E(106) * 0.5 Then
+                                    Fehler$ = Fehler$ & Lang_Res(700) & " (" & k & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Anfahren geht die Bandführung an Scheibe... verloren
                                     Fehlerwert = Fehlerwert + 10
                                 End If
                             End If
                             
                             'zylindrische sollen sich auch nicht biegen, sonst läuft das Band übereinander
-                            If Bandfuehrungvorhanden = True And Sys(K).E(106) = 0 Then
-                                If Sys(K).E(104) > Sys(K).E(7) Then 'einfache wölbhöhenempfehlung
-                                    Fehler$ = Fehler$ & Lang_Res(701) & " (" & K & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Anfahren kann das Band an Scheibe übereinanderlaufen
+                            If Bandfuehrungvorhanden = True And Sys(k).E(106) = 0 Then
+                                If Sys(k).E(104) > Sys(k).E(7) Then 'einfache wölbhöhenempfehlung
+                                    Fehler$ = Fehler$ & Lang_Res(701) & " (" & k & ")." & Chr$(13) & Chr$(10)   '- Durch die Durchbiegung beim Anfahren kann das Band an Scheibe übereinanderlaufen
                                     Fehlerwert = Fehlerwert + 10
                                 End If
                             End If
@@ -843,43 +844,43 @@ Kontrollrechnungen:
                 '3. statische wellenbelastung ermitteln
                 
                     If AuflTrumKraft > 0 Then
-                        Sys(K).E(75) = Sin(Sys(K).E(13) / 2 / 180 * PI) * AuflTrumKraft + Sin(Sys(K).E(13) / 2 / 180 * PI) * AuflTrumKraft
+                        Sys(k).E(75) = Sin(Sys(k).E(13) / 2 / 180 * PI) * AuflTrumKraft + Sin(Sys(k).E(13) / 2 / 180 * PI) * AuflTrumKraft
                     Else
-                        Sys(K).E(75) = 0
+                        Sys(k).E(75) = 0
                     End If
                     
                     'dazu passend die statische durchbiegung nur ausrechnen, nicht kontrollieren, wie soll das band auch verlaufen?
-                        Q = Sqr(Sys(K).E(75) ^ 2 + (9.81 * Sys(K).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
-                        If Flaechenmoment > 0 And Sys(K).E(103) > 0 Then Sys(K).E(100) = (5 * Q * Sys(K).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(K).E(103)).Einstellung)
+                        Q = Sqr(Sys(k).E(75) ^ 2 + (9.81 * Sys(k).E(5)) ^ 2) 'kraft mit schwerkraft der scheibe ergänzen, geht einstweilen won waagerecht aus, also phytagoras :-)
+                        If Flaechenmoment > 0 And Sys(k).E(103) > 0 Then Sys(k).E(100) = (5 * Q * Sys(k).E(4) ^ 3) / (384 * Flaechenmoment * Kst(Sys(k).E(103)).Einstellung)
             
             'faktor Fw/Fu /rho-wertkontrolle, zugeständnis an die alten druiden
-                If Sys(K).Tag <> "005" And Sys(K).E(50) > 0 Then 'messerkanten brauchen das nicht, ergeben nulldivision
+                If Sys(k).Tag <> "005" And Sys(k).E(50) > 0 Then 'messerkanten brauchen das nicht, ergeben nulldivision
                     
                     'faktor 1,7?, kontrolle
                         'neu 202004, siehe oben
-                        Sys(K).E(93) = WellenbelastungFwFu / Abs(Sys(K).E(50)) 'wellenbelastung dynamisch / umfangskraft gesamt normalbetrieb
+                        Sys(k).E(93) = WellenbelastungFwFu / Abs(Sys(k).E(50)) 'wellenbelastung dynamisch / umfangskraft gesamt normalbetrieb
                         
                         'aber nur wenn der benutzer von den grundeinstellungen her will, bei extremultus ab okt 2004 immer (bloedsinn, f&e idee)
                         'lt. dr meyer/kaemper ab juli 2006 aufgrund kundenbeschwerde wieder aufgehoben :-)
                         If Init_B_Rex_FwFu_Fehler = 1 Then 'Or Left(Sys(1).S(2), 1) = "8" Then
-                            If Sys(K).E(93) > 0 Then  '(fw/fu-kennwert)
+                            If Sys(k).E(93) > 0 Then  '(fw/fu-kennwert)
                                 'nah dran
-                                If Sys(K).E(93) > Fw_Fu_Winkelabh(Sys(K).E(13)) And Sys(K).E(93) < Fw_Fu_Winkelabh(Sys(K).E(13)) + 0.2 Then
-                                    Fehler$ = Fehler$ & Lang_Res(674) & K & ") = " & Int(Sys(K).E(93) * 100) / 100 & Lang_Res(675) & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;ev. Probleme bei der Kraftübertragung
+                                If Sys(k).E(93) > Fw_Fu_Winkelabh(Sys(k).E(13)) And Sys(k).E(93) < Fw_Fu_Winkelabh(Sys(k).E(13)) + 0.2 Then
+                                    Fehler$ = Fehler$ & Lang_Res(674) & k & ") = " & Int(Sys(k).E(93) * 100) / 100 & Lang_Res(675) & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;ev. Probleme bei der Kraftübertragung
                                     Fehlerwert = Fehlerwert + 10
                                 End If
                                 'gerissen
-                                If Sys(K).E(93) <= Fw_Fu_Winkelabh(Sys(K).E(13)) Then
-                                    Fehler$ = Fehler$ & "!" & Lang_Res(674) & K & ") = " & Int(Sys(K).E(93) * 100) / 100 & "; Kraftuebertragungsprobleme" & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
+                                If Sys(k).E(93) <= Fw_Fu_Winkelabh(Sys(k).E(13)) Then
+                                    Fehler$ = Fehler$ & "!" & Lang_Res(674) & k & ") = " & Int(Sys(k).E(93) * 100) / 100 & "; Kraftuebertragungsprobleme" & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
                                     Fehlerwert = Fehlerwert + 100 'zappenduster
                                 End If
                             End If
                             '201606 auch fuer spitzenlast einbauen
                             If Spitzenlastvorhanden = True Then
-                                If Abs(Sys(K).E(118)) > 0 And Sys(K).E(105) > 0 Then
-                                    FuFwSpitze = Sys(K).E(105) / Abs(Sys(K).E(118))
-                                    If FuFwSpitze <= Fw_Fu_Winkelabh(Sys(K).E(13)) + 0.2 Then
-                                        Fehler$ = Fehler$ & Lang_Res(713) & K & ") = " & Int(FuFwSpitze * 100) / 100 & "; " & Lang_Res(714) & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
+                                If Abs(Sys(k).E(118)) > 0 And Sys(k).E(105) > 0 Then
+                                    FuFwSpitze = Sys(k).E(105) / Abs(Sys(k).E(118))
+                                    If FuFwSpitze <= Fw_Fu_Winkelabh(Sys(k).E(13)) + 0.2 Then
+                                        Fehler$ = Fehler$ & Lang_Res(713) & k & ") = " & Int(FuFwSpitze * 100) / 100 & "; " & Lang_Res(714) & Chr$(13) & Chr$(10)  'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
                                         'Fehlerwert = Fehlerwert + 100 'nicht spitzenlast bestrafen, das geht vorbei...
                                     End If
                                 End If
@@ -893,13 +894,13 @@ Kontrollrechnungen:
                         'am besten verkaufen wir kein extremultus, es koennte ja schiefgehen
                         'bei mitarbeitern (userstatus 2) bleibts weiter freigestellt
                         'funenn (108) bei funennauflegedehnung (110)
-                        If left(Sys(1).S(2), 1) = "8" Then
+                        If left(Sys(1).s(2), 1) = "8" Then
                             If Init_B_Rex_FuNenn_Fehler = 1 Or (Init_B_Rex_FuNenn_Fehler = 0 And UserStatus <> 2) Then
                                 If Sys(1).E(108) > 0 And Sys(1).E(109) > 0 And Sys(1).E(110) > 0 Then 'funenn vorhanden?
-                                    Q = (Sys(K).Furein + Sys(K).Furaus) / 2 * 2 / (SystemTyp.Kraftdehnung * Sys(1).E(34)) 'dehnung band an dieser scheibe
+                                    Q = (Sys(k).Furein + Sys(k).Furaus) / 2 * 2 / (SystemTyp.Kraftdehnung * Sys(1).E(34)) 'dehnung band an dieser scheibe
                                     'fuelement/dehnung>funenn*funennmax*bandbreite/funennangabebeidehnung..
-                                    If Sys(K).E(50) / Q > Sys(1).E(108) * Sys(1).E(109) * Sys(1).E(34) / Sys(1).E(110) Then
-                                        Fehler$ = Fehler$ & "!FuNenn dieses Typs an Scheibe (" & K & ") ueberschritten" & Chr$(13) & Chr$(10) 'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
+                                    If Sys(k).E(50) / Q > Sys(1).E(108) * Sys(1).E(109) * Sys(1).E(34) / Sys(1).E(110) Then
+                                        Fehler$ = Fehler$ & "!FuNenn dieses Typs an Scheibe (" & k & ") ueberschritten" & Chr$(13) & Chr$(10) 'Fw/Fu von Scheibe(...;  **** Kraftübertragungsprobleme
                                         Fehlerwert = Fehlerwert + 100 'zappenduster
                                     End If
                                 End If
@@ -908,19 +909,19 @@ Kontrollrechnungen:
                     
                     
                     'rho-Wert berechnen und bewerten
-                        Sys(K).E(76) = Sys(K).E(50) * 360 / (PI * Sys(K).E(2) * Sys(1).E(34) * Sys(K).E(13))
+                        Sys(k).E(76) = Sys(k).E(50) * 360 / (PI * Sys(k).E(2) * Sys(1).E(34) * Sys(k).E(13))
                         If Init_B_Rex_rho_Wert_Fehler = 1 Then 'aber nur wenn der benutzer von den grundeinstellungen her will
-                            Select Case left(LCase(Sys(1).S(5)), 3) 'transilon, geht zwar, ribbelt aber anders als extremultus früh drauflos
+                            Select Case left(LCase(Sys(1).s(5)), 3) 'transilon, geht zwar, ribbelt aber anders als extremultus früh drauflos
                                 Case "tra"
                                     'gummiert oder nicht?
                                     If Sys(Antriebsscheibe).E(14) = 17 Then 'gummiert
-                                        If Sys(K).E(76) > 0.045 Then
-                                            Fehler$ = Fehler$ & Lang_Res(678) & K & Lang_Res(679) & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
+                                        If Sys(k).E(76) > 0.045 Then
+                                            Fehler$ = Fehler$ & Lang_Res(678) & k & Lang_Res(679) & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
                                             Fehlerwert = Fehlerwert + 10
                                         End If
                                     Else 'blank
-                                        If Sys(K).E(76) > 0.03 Then
-                                            Fehler$ = Fehler$ & Lang_Res(678) & K & Lang_Res(679) & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
+                                        If Sys(k).E(76) > 0.03 Then
+                                            Fehler$ = Fehler$ & Lang_Res(678) & k & Lang_Res(679) & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
                                             Fehlerwert = Fehlerwert + 10
                                         End If
                                     End If
@@ -929,8 +930,8 @@ Kontrollrechnungen:
                                     'PET 0,1 (B81 & B82)
                                     'A 0,15 (B81 & B82)
                                     If SystemTyp.rho = 0 Then SystemTyp.rho = 0.08
-                                    If Sys(K).E(76) > SystemTyp.rho Then '0.08 Then  '202004 rho wert unterschieden nach zugträger
-                                        Fehler$ = Fehler$ & Lang_Res(678) & K & Lang_Res(679) & " (>" & SystemTyp.rho & ")" & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
+                                    If Sys(k).E(76) > SystemTyp.rho Then '0.08 Then  '202004 rho wert unterschieden nach zugträger
+                                        Fehler$ = Fehler$ & Lang_Res(678) & k & Lang_Res(679) & " (>" & SystemTyp.rho & ")" & Chr$(13) & Chr$(10)   '- rho-wert von Element...too high; ev. Probleme bei der Kraftübertragung
                                         Fehlerwert = Fehlerwert + 10
                                     End If
                             End Select
@@ -938,25 +939,25 @@ Kontrollrechnungen:
                 End If
                
             'durchmesserkontrolle nach meiner formel
-                If Sys(K).E(2) > 0 Then 'And Sys(K).E(17) > 20 Then '17 umfangskraft messerkanten also nicht
+                If Sys(k).E(2) > 0 Then 'And Sys(K).E(17) > 20 Then '17 umfangskraft messerkanten also nicht
                     '(ist ein durchmesser und soll übertragen,
                     'messerkanten ausgeschlossen
                     
                     'Mue ermitteln zwischen Band und scheibe
                 
-                    If Sys(K).E(41) = 1 Then
+                    If Sys(k).E(41) = 1 Then
                         mue = Sys(1).E(78) 'bandreibungszahl lauf
                     Else
                         mue = Sys(1).E(77) 'mit tragseite zum messer, auch wenn er damit seine anlage abfackelt
                         
                         If Sys(1).E(77) = 0 Then
-                            Fehler$ = Fehler$ & Lang_Res(702) & K & Lang_Res(703) & Chr$(13) & Chr$(10)   '- Element ... Reibungszahl Tragseite/Antriebsseite des Bandes wurde gebraucht, aber nicht gefunden
+                            Fehler$ = Fehler$ & Lang_Res(702) & k & Lang_Res(703) & Chr$(13) & Chr$(10)   '- Element ... Reibungszahl Tragseite/Antriebsseite des Bandes wurde gebraucht, aber nicht gefunden
                         End If
                     End If
                     'negatives mue sind geschaetzte werte aus der datenbank
                     'If Mue < 0 Then Fehler$ = Fehler$ & Lang_Res(640) & K & Lang_Res(641) & Chr$(13) & Chr$(10)   '-Reibungszahl Band-Scheibe ... geschätzt
                     
-                    mue = ReibungszahlBerechnung(mue, 2, Sys(K).E(14), True)
+                    mue = ReibungszahlBerechnung(mue, 2, Sys(k).E(14), True)
                     
                     
                     'erforderlicher Durchmesser dynamisch, statisch gibts ja nix zum mitnehmen
@@ -964,20 +965,20 @@ Kontrollrechnungen:
                     'Sys(K).E(72) = (Abs(Sys(K).E(50)) / (Sys(1).E(34) * Abs(Sys(K).Furaus + Sys(K).Furein)) + 0.0002) / (0.26 * Mue - 0.017) * 230 / Sys(K).E(13) * 1000 * 1.3
                     '1,3 als sicherheit für meinen persönlichen ruhigen Schlaf, formel noch nicht so richtig wahr
                     
-                    If mue > 0 Then Sys(K).E(72) = Abs(Sys(K).E(50)) ^ 1.6 * 25000 / (Sys(1).E(34) * Sys(K).E(52) * mue * Sys(K).E(13))
+                    If mue > 0 Then Sys(k).E(72) = Abs(Sys(k).E(50)) ^ 1.6 * 25000 / (Sys(1).E(34) * Sys(k).E(52) * mue * Sys(k).E(13))
                     'erf. Durchmesser = Fu^1.6*25000/(bo*Fw*Mue*umschlingung)
                     
                     '-Durchmesser Element () reicht zur Übertragung der Umfangskraft nicht aus
                     If Init_B_Rex_KraftUebertrkontr = 1 Then
-                        If Sys(K).E(72) > Sys(K).E(2) And Sys(K).E(17) > 0 Then
-                            Fehler$ = Fehler$ & Lang_Res(663) & K & Lang_Res(664) & Chr$(13) & Chr$(10)
+                        If Sys(k).E(72) > Sys(k).E(2) And Sys(k).E(17) > 0 Then
+                            Fehler$ = Fehler$ & Lang_Res(663) & k & Lang_Res(664) & Chr$(13) & Chr$(10)
                             Fehlerwert = Fehlerwert + 100
                         End If
                     End If
                     
                     'erf. durchmesser auf mindestdurchmesser erhöhen, falls nötig'201902
-                    If Sys(K).E(41) = 1 Then If Sys(K).E(72) < Abs(Sys(1).E(86)) Then Sys(K).E(72) = Abs(Sys(1).E(86)) 'laufseite, also wert ohne gegenbiegung
-                    If Sys(K).E(41) = 2 Then If Sys(K).E(72) < Abs(Sys(1).E(119)) Then Sys(K).E(72) = Abs(Sys(1).E(119)) 'tragseite, also wert mit gegenbiegung
+                    If Sys(k).E(41) = 1 Then If Sys(k).E(72) < Abs(Sys(1).E(86)) Then Sys(k).E(72) = Abs(Sys(1).E(86)) 'laufseite, also wert ohne gegenbiegung
+                    If Sys(k).E(41) = 2 Then If Sys(k).E(72) < Abs(Sys(1).E(119)) Then Sys(k).E(72) = Abs(Sys(1).E(119)) 'tragseite, also wert mit gegenbiegung
                                                             
                     'überarbeiten bei spitzenlast:
                     'erforderlicher Durchmesser im statischen zustand zusätzlich
@@ -988,16 +989,16 @@ Kontrollrechnungen:
                 End If
                 
             'mindestdurchmesserkontrolle scheibe, messerkante besitzt eine eigene und durchläuft diese schleife nicht
-                If Sys(K).Tag <> "005" And Init_B_Rex_Minddurchmkontr = 1 Then  'messerkanten nicht
-                    If Sys(K).E(41) = 1 Then
-                        If Sys(K).E(2) < Abs(Sys(1).E(86)) Then 'laufseite
-                            Fehler$ = Fehler$ & "!" & Lang_Res(680) & K & Lang_Res(681) & "(" & Sys(1).E(86) & "mm)" & vbCrLf  'unterschreitet mindestdurchmesser
+                If Sys(k).Tag <> "005" And Init_B_Rex_Minddurchmkontr = 1 Then  'messerkanten nicht
+                    If Sys(k).E(41) = 1 Then
+                        If Sys(k).E(2) < Abs(Sys(1).E(86)) Then 'laufseite
+                            Fehler$ = Fehler$ & "!" & Lang_Res(680) & k & Lang_Res(681) & "(" & Sys(1).E(86) & "mm)" & vbCrLf  'unterschreitet mindestdurchmesser
                             Fehlerwert = Fehlerwert + 100
                         End If
                     End If
-                    If Sys(K).E(41) = 2 Then 'tragseite
-                        If Sys(K).E(2) < Abs(Sys(1).E(119)) Then
-                            Fehler$ = Fehler$ & "!" & Lang_Res(680) & K & Lang_Res(681) & "(" & Sys(1).E(119) & "mm)" & vbCrLf  'unterschreitet mindestdurchmesser
+                    If Sys(k).E(41) = 2 Then 'tragseite
+                        If Sys(k).E(2) < Abs(Sys(1).E(119)) Then
+                            Fehler$ = Fehler$ & "!" & Lang_Res(680) & k & Lang_Res(681) & "(" & Sys(1).E(119) & "mm)" & vbCrLf  'unterschreitet mindestdurchmesser
                             Fehlerwert = Fehlerwert + 100
                         End If
                     End If
@@ -1006,9 +1007,9 @@ Kontrollrechnungen:
         
             'eigenfrequenzkontrolle
                             
-                If Sys(K).Tag <> "005" And Schwingungen_berechnen = True Then 'also keine messerkanten, sonst alle
+                If Sys(k).Tag <> "005" And Schwingungen_berechnen = True Then 'also keine messerkanten, sonst alle
                     
-                    If Sys(K).E(111) = 0 Then Sys(K).E(111) = 1  '201909, irgend ne unwucht hat doch jeder :-)
+                    If Sys(k).E(111) = 0 Then Sys(k).E(111) = 1  '201909, irgend ne unwucht hat doch jeder :-)
                     
                     'abgleich mit erregungen pro umdrehung
                         'If Sys(K).E(111) > 0 Then 'nur wenn eine erregung vorgegeben ist
@@ -1016,27 +1017,27 @@ Kontrollrechnungen:
                             '111 anregungen
                             '21 drehzahl in umin
                             
-                            Errfreq = Sys(K).E(111) * Sys(K).E(21) / 60
-                            If Errfreq > 0.8 * Sys(K).Verb(1, 4) And Errfreq < 1.2 * Sys(K).Verb(1, 4) Then '(1,4) eigenfrequenz dieses trumstueckchens
+                            Errfreq = Sys(k).E(111) * Sys(k).E(21) / 60
+                            If Errfreq > 0.8 * Sys(k).Verb(1, 4) And Errfreq < 1.2 * Sys(k).Verb(1, 4) Then '(1,4) eigenfrequenz dieses trumstueckchens
                                 'ganz nah dran auf 20%
-                                Fehler$ = Fehler$ & Lang_Res(185) & K & Lang_Res(186) & Round(Sys(K).Verb(1, 3)) & "mm. " & vbCrLf '-Element ( // "): kritische Eigenfrequenzanregung transversal des Trums mit Länge "
+                                Fehler$ = Fehler$ & Lang_Res(185) & k & Lang_Res(186) & Round(Sys(k).Verb(1, 3)) & "mm. " & vbCrLf '-Element ( // "): kritische Eigenfrequenzanregung transversal des Trums mit Länge "
                                 FehlerwertSchwingungen = FehlerwertSchwingungen + 100
                             Else
-                                If Errfreq > 0.75 * Sys(K).Verb(1, 4) And Errfreq < 1.25 * Sys(K).Verb(1, 4) Then
+                                If Errfreq > 0.75 * Sys(k).Verb(1, 4) And Errfreq < 1.25 * Sys(k).Verb(1, 4) Then
                                     'in der naehe, 30%
-                                    Fehler$ = Fehler$ & Lang_Res(185) & K & Lang_Res(186) & Round(Sys(K).Verb(1, 3)) & "mm. " & vbCrLf
+                                    Fehler$ = Fehler$ & Lang_Res(185) & k & Lang_Res(186) & Round(Sys(k).Verb(1, 3)) & "mm. " & vbCrLf
                                     FehlerwertSchwingungen = FehlerwertSchwingungen + 10
                                 End If
                             End If
                             'zweite verbindung
-                            If Errfreq > 0.8 * Sys(K).Verb(2, 4) And Errfreq < 1.2 * Sys(K).Verb(2, 4) Then
+                            If Errfreq > 0.8 * Sys(k).Verb(2, 4) And Errfreq < 1.2 * Sys(k).Verb(2, 4) Then
                                 'ganz nah dran auf 20%
-                                Fehler$ = Fehler$ & Lang_Res(185) & K & Lang_Res(186) & Round(Sys(K).Verb(2, 3)) & "mm. " & vbCrLf
+                                Fehler$ = Fehler$ & Lang_Res(185) & k & Lang_Res(186) & Round(Sys(k).Verb(2, 3)) & "mm. " & vbCrLf
                                 FehlerwertSchwingungen = FehlerwertSchwingungen + 100
                             Else
-                                If Errfreq > 0.75 * Sys(K).Verb(2, 4) And Errfreq < 1.25 * Sys(K).Verb(2, 4) Then
+                                If Errfreq > 0.75 * Sys(k).Verb(2, 4) And Errfreq < 1.25 * Sys(k).Verb(2, 4) Then
                                     'in der naehe, 30%
-                                    Fehler$ = Fehler$ & Lang_Res(185) & K & Lang_Res(186) & Round(Sys(K).Verb(2, 3)) & "mm. " & vbCrLf
+                                    Fehler$ = Fehler$ & Lang_Res(185) & k & Lang_Res(186) & Round(Sys(k).Verb(2, 3)) & "mm. " & vbCrLf
                                     FehlerwertSchwingungen = FehlerwertSchwingungen + 10
                                 End If
                             End If
@@ -1046,7 +1047,7 @@ Kontrollrechnungen:
                     
                 End If
         End If 'umschlingung > grenzwert
-    Next K
+    Next k
     
     'messerbänder gegen Schrumpf schützen
         If Sys(1).E(53) < 0.2 And Messervorhanden = True Then
@@ -1131,12 +1132,12 @@ Kontrollrechnungen:
                 'Fehlerwert = Fehlerwert + 100'2017 raus damit, hinweis reicht, dann wird sie eben unterschritten. einmal an der schraube drehen, schon gehts wieder
             End If
         End If
-    Return
+
 End Sub
 Private Sub Berechnung()
 Dim Masse As Double, Restmasse As Double, Restlaenge As Double, MaxMasse As Double, Memo As Double, Memo1 As Double
 Dim DurchschMasse As Double, M As Double, Q As Double, P As Double 'eine Stückchens (bei tragrollen-, rollenbahnen)
-Dim K As Integer, IaltK As Integer, j As Integer, H As Integer, B As Integer
+Dim k As Integer, IaltK As Integer, j As Integer, H As Integer, b As Integer
 Dim mue As Double, Mue1 As Double, Mue2 As Double, Mue3 As Double
 Dim Tragseite_Mue_verwendet As Boolean
 Dim i As Integer
@@ -1150,7 +1151,7 @@ Dim i As Integer
     'vorher die fliehkräfte festlegen
     'Überlastvorgabe = 1 'nämlich garkeine
     
-    K = 1 'ist hier der Zähler
+    k = 1 'ist hier der Zähler
         
     Fuletztes = Fuerstes 'nur merken für die jeweils nächste schleife Rechnung
     FuletztesSp = Fuerstes
@@ -1158,7 +1159,7 @@ Dim i As Integer
     Fumax = Fuerstes 'maximalwert festhalten zur späteren skalierung
     FumaxSp = Fuerstes
     
-    K = Startelement 'wird oben in richtiger richtung festgelegt
+    k = Startelement 'wird oben in richtiger richtung festgelegt
     IaltK = Antriebsscheibe 'von da kommt er, da soll er nicht gleich wieder hin
     Sys(Antriebsscheibe).Lraus = 0 'sonst wird immer die doppelte länge aufaddiert
     
@@ -1167,30 +1168,30 @@ Dim i As Integer
         Staumasse = 0
         Tragseite_Mue_verwendet = False
         
-        Sys(K).Furein = Fuletztes
+        Sys(k).Furein = Fuletztes
         
         'den vorherigen bandabschnitt im kreislauf ermitteln
         'abstände werden immer in beiden beteilgten elementen protokolliert
-        If Sys(K).Verb(1, 1) = IaltK Then
-            Sys(K).Lrein = Sys(K).Verb(1, 3) + Sys(IaltK).Lraus 'trumlänge +bisher protokoll. länge
+        If Sys(k).Verb(1, 1) = IaltK Then
+            Sys(k).Lrein = Sys(k).Verb(1, 3) + Sys(IaltK).Lraus 'trumlänge +bisher protokoll. länge
         Else
-            Sys(K).Lrein = Sys(K).Verb(2, 3) + Sys(IaltK).Lraus
+            Sys(k).Lrein = Sys(k).Verb(2, 3) + Sys(IaltK).Lraus
         End If
         
-        Select Case Sys(K).Tag
+        Select Case Sys(k).Tag
             '001-antriebsscheibe wird nicht berechnet
             Case "002" 'antriebsscheibe, sekundäre
-                Fu = Sys(K).E(17) 'vorgegebene umfangskraft
+                Fu = Sys(k).E(17) 'vorgegebene umfangskraft
                 
                 'biegeleistung
-                Sys(K).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(K).E(13))) / Sys(K).E(2) * Sys(1).E(80)
-                Sys(K).E(50) = Abs(-Fu + Sys(K).E(66))
+                Sys(k).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(k).E(13))) / Sys(k).E(2) * Sys(1).E(80)
+                Sys(k).E(50) = Abs(-Fu + Sys(k).E(66))
                       
                 'Spitzenlast aus beschleunigung der Masse:
-                Sys(K).E(98) = Sys(1).E(68) * MassentraegheitsErmittlung(K) / (Sys(K).E(2) / 2000) ^ 2 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
+                Sys(k).E(98) = Sys(1).E(68) * MassentraegheitsErmittlung(k) / (Sys(k).E(2) / 2000) ^ 2 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
                           
-                Sys(K).Furaus = Sys(K).Furein - Fu + Sys(K).E(66)
-                Sys(K).Lraus = Sys(K).Lrein + PI * Sys(K).E(2) / 360 * Sys(K).E(13)
+                Sys(k).Furaus = Sys(k).Furein - Fu + Sys(k).E(66)
+                Sys(k).Lraus = Sys(k).Lrein + PI * Sys(k).E(2) / 360 * Sys(k).E(13)
             Case "003" 'umlenkscheibe
                
                 'biegeleistungsanteil
@@ -1202,34 +1203,34 @@ Dim i As Integer
                 '80 = biegeleistungskennwert
                 
                 
-                Sys(K).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(K).E(13))) / Sys(K).E(2) * Sys(1).E(80)
+                Sys(k).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(k).E(13))) / Sys(k).E(2) * Sys(1).E(80)
                 
-                Fu = Sys(K).E(17) + Sys(K).E(66)
-                Sys(K).E(50) = Fu
+                Fu = Sys(k).E(17) + Sys(k).E(66)
+                Sys(k).E(50) = Fu
                 
                 'Spitzenlast aus beschleunigung der Masse:
-                Sys(K).E(98) = Sys(1).E(68) * MassentraegheitsErmittlung(K) / (Sys(K).E(2) / 2000) ^ 2 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
-                If Kst(Sys(K).E(60)).Einstellung <> 22 And Kst(Sys(K).E(60)).Einstellung <> 0 Then
-                    Sys(K).E(98) = Sys(K).E(98) + Fu / 100 * Kst(Sys(K).E(60)).Einstellung 'automatische überlastvorgabe
+                Sys(k).E(98) = Sys(1).E(68) * MassentraegheitsErmittlung(k) / (Sys(k).E(2) / 2000) ^ 2 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
+                If Kst(Sys(k).E(60)).Einstellung <> 22 And Kst(Sys(k).E(60)).Einstellung <> 0 Then
+                    Sys(k).E(98) = Sys(k).E(98) + Fu / 100 * Kst(Sys(k).E(60)).Einstellung 'automatische überlastvorgabe
                 Else
-                    Sys(K).E(98) = Sys(K).E(98) + Fu / 100 * Sys(K).E(59) 'manuelle überlastvorgabe
+                    Sys(k).E(98) = Sys(k).E(98) + Fu / 100 * Sys(k).E(59) 'manuelle überlastvorgabe
                 End If
                 
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + PI * Sys(K).E(2) / 360 * Sys(K).E(13)
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + PI * Sys(k).E(2) / 360 * Sys(k).E(13)
                 'I = I
             Case "005" 'messerkante
                 
                 'eigene, keine ausgelagerte durchmesserkontrolle
                 'später halt mal auslagern
-                If Sys(K).E(45) < Abs(Sys(1).E(86)) And Init_B_Rex_Minddurchmkontr = 1 Then
+                If Sys(k).E(45) < Abs(Sys(1).E(86)) And Init_B_Rex_Minddurchmkontr = 1 Then
                     'Zulässig = False
                     '201902, nicht nach gegenbiegung oder ohne unterscheiden, weil e nur die laufseite beim messer in frage kommt
                     Fehlerwert = Fehlerwert + 100
-                    Fehler$ = Fehler$ & Lang_Res(610) & K & Lang_Res(609) & Sys(1).E(86) & "mm)" & Chr$(13) & Chr$(10)  '-Messerkante ... unterschreitet Mindestdurchmesser (
+                    Fehler$ = Fehler$ & Lang_Res(610) & k & Lang_Res(609) & Sys(1).E(86) & "mm)" & Chr$(13) & Chr$(10)  '-Messerkante ... unterschreitet Mindestdurchmesser (
                 End If
                 
-                If Sys(K).E(41) = 1 Then
+                If Sys(k).E(41) = 1 Then
                     mue = Sys(1).E(78)
                 Else
                     mue = Sys(1).E(77) 'mit tragseite zum messer, auch wenn er damit seine anlage abfackelt
@@ -1238,29 +1239,29 @@ Dim i As Integer
                 
                 'If mue < 0 Then Fehler$ = Fehler$ & Lang_Res(611) & K & Lang_Res(612) & Chr$(13) & Chr$(10)   '-Reibungszahl Band-Messerkante ... geschätzt
                 
-                mue = ReibungszahlBerechnung(mue, 1, Sys(K).E(48), True)
+                mue = ReibungszahlBerechnung(mue, 1, Sys(k).E(48), True)
 
-                Fu = (mue * 0.001 * Sys(K).Furein / Sys(1).E(34) * Sys(K).E(13) * (Sys(K).E(20) + 2.578 * Sys(K).E(45) / 2 + 17.88)) * Sys(1).E(34) 'pro mm gerechnet, umgerechnet auf breite
+                Fu = (mue * 0.001 * Sys(k).Furein / Sys(1).E(34) * Sys(k).E(13) * (Sys(k).E(20) + 2.578 * Sys(k).E(45) / 2 + 17.88)) * Sys(1).E(34) 'pro mm gerechnet, umgerechnet auf breite
                 If Fu < 0 Then Fu = 0 'aus keiner kraft darf messerkante auch keine negative machen
-                Sys(K).E(49) = (mue * 0.55 * Sys(K).Furein / Sys(1).E(34) * Sys(K).E(13) * (Sys(K).E(20) + 0.08 * Sys(K).E(45) / 2 + 0.32)) + 23 'temperatur an der messerkante
-                If Sys(K).E(49) > 200 Then 'temperatur > 200 glaubt mir sowieso keiner, aber put ist put
+                Sys(k).E(49) = (mue * 0.55 * Sys(k).Furein / Sys(1).E(34) * Sys(k).E(13) * (Sys(k).E(20) + 0.08 * Sys(k).E(45) / 2 + 0.32)) + 23 'temperatur an der messerkante
+                If Sys(k).E(49) > 200 Then 'temperatur > 200 glaubt mir sowieso keiner, aber put ist put
                     'Zulässig = False
-                    Sys(K).E(49) = 200
+                    Sys(k).E(49) = 200
                     Fehlerwert = Fehlerwert + 100
-                    Fehler$ = Fehler$ & Lang_Res(613) & K & Lang_Res(614) & Chr$(13) & Chr$(10)   '-Messerkantentemperatur ... >200°C, Überhitzung
+                    Fehler$ = Fehler$ & Lang_Res(613) & k & Lang_Res(614) & Chr$(13) & Chr$(10)   '-Messerkantentemperatur ... >200°C, Überhitzung
                 End If
                 
                 'biegeleistung messerkante, ist aber oben schon berücksichtigt (das ist die frage, wahrscheinlich kann mans getrost obendraufschlagen), wird nur extra ausgewiesen
-                Sys(K).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(K).E(13))) / Sys(K).E(45) * Sys(1).E(80)
+                Sys(k).E(66) = (Sys(1).E(34) * (4 + Sys(1).E(20)) * Sqr(Sys(k).E(13))) / Sys(k).E(45) * Sys(1).E(80)
 
-                Sys(K).E(50) = Fu
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + PI * Sys(K).E(13) / 360 * Sys(K).E(45)
+                Sys(k).E(50) = Fu
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + PI * Sys(k).E(13) / 360 * Sys(k).E(45)
             Case "101" 'tisch, träger
                 
                 'Mue reibungszahl zwischen Band und Gleittischunterlage
                 'Mue1 reibungszahl zwischen band und transportgut
-                    If Sys(K).E(41) = 1 Then
+                    If Sys(k).E(41) = 1 Then
                         mue = Sys(1).E(78) 'Laufseite zum Tisch
                         Mue1 = Sys(1).E(77) 'Tragseite zum Transportgut
                     Else
@@ -1269,7 +1270,7 @@ Dim i As Integer
                         Tragseite_Mue_verwendet = True
                     End If
                 
-                mue = ReibungszahlBerechnung(mue, 1, Sys(K).E(15), True)
+                mue = ReibungszahlBerechnung(mue, 1, Sys(k).E(15), True)
                 
                
                 'transportierte masse ermitteln
@@ -1280,10 +1281,10 @@ Dim i As Integer
                     Q = 0
                     Masse = 0 'nur die bewegte masse
                     MaxMasse = 0
-                    Restlaenge = Sys(K).E(22)
-                    B = 0
+                    Restlaenge = Sys(k).E(22)
+                    b = 0
                     For j = 9 To Maxelementindex
-                        If Sys(j).Zugehoerigkeit = K Then
+                        If Sys(j).Zugehoerigkeit = k Then
                             If Sys(j).Tag = "201" Then 'transportgut
                                 If Sys(j).E(32) > MaxMasse Then MaxMasse = Sys(j).E(32)
                                 Masse = Masse + Sys(j).E(28)
@@ -1296,14 +1297,14 @@ Dim i As Integer
                                 Tragseite_Mue_verwendet = True
                             End If
                             If Sys(j).Tag = "205" Then 'abweiser, einer reicht
-                                B = j 'position merken
+                                b = j 'position merken
                                 Tragseite_Mue_verwendet = True
                             End If
                        End If
                     Next j
                     If P > 0 And Q > 0 Then 'wenn garnichts gestaut wurde
                         Mue1 = Mue1 * (P / Q) 'durchschnittliche reibung wird errechnet
-                        If B > 0 Then Mue3 = P / Q * (Kst(Sys(B).E(15)).Einstellung * 0.2)
+                        If b > 0 Then Mue3 = P / Q * (Kst(Sys(b).E(15)).Einstellung * 0.2)
                     End If
                     P = 0 'stehen wieder zur Verfügung
                     Q = 0
@@ -1319,42 +1320,42 @@ Dim i As Integer
                     
                 Restmasse = Masse
                 If Restmasse < 0 Then
-                    Fehler$ = Fehler$ & Lang_Res(625) & K & Lang_Res(615) & Chr$(13) & Chr$(10)  '-Förderer: .... Stau und Abweiser mangels Transportgut nicht berechnet.
+                    Fehler$ = Fehler$ & Lang_Res(625) & k & Lang_Res(615) & Chr$(13) & Chr$(10)  '-Förderer: .... Stau und Abweiser mangels Transportgut nicht berechnet.
                 End If
                 
                 If Masse < 0 Then Masse = 0 'kann passieren, wenn stau ohne transportgut da ist
                                 
                 'noch ohne bandmasse, denn deren potentialsumme ist 0, weil band endlos
                 
-                If Sys(K).Rechts = True Then
+                If Sys(k).Rechts = True Then
                     
-                    Fu = Fu + Masse * 9.81 * Sin(Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                    Fu = Fu + Masse * 9.81 * Sin(Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 Else
-                    Fu = Fu + Masse * 9.81 * Sin(-Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                    Fu = Fu + Masse * 9.81 * Sin(-Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 End If
                 
                 'jetzt bandmasse dazu, denn sie wird ja auch über den tisch geschliffen
-                Masse = Masse + (Sys(K).E(22) / 1000 * Sys(1).E(34) / 1000) * Sys(1).E(81) 'bandmasse dazuzählen
+                Masse = Masse + (Sys(k).E(22) / 1000 * Sys(1).E(34) / 1000) * Sys(1).E(81) 'bandmasse dazuzählen
                 'bandmasse wird nur über nichtgestaute bereiche verteilt.
                 'das ist zwar falsch, der fehler ist aber gering und hinnehmbar
                 
                 'massenkorrektur entsprechend der Steigung:
-                Masse = Masse * Cos(Sys(K).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegte gut und auf fu durch reibung, nicht vom reversieren abh.
+                Masse = Masse * Cos(Sys(k).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegte gut und auf fu durch reibung, nicht vom reversieren abh.
                 
                 'kräfte durch reibung addieren, DAS ist die eigentliche rechnung, die steigung steckt in der masse
                 Fu = Fu + 9.81 * Masse * mue 'fu durch reibung, steigungsausgleich ist in der masse enthalten
                 
                 If Restlaenge = 0 Then Restlaenge = 0.1 'falls staulänge mit trägerlänge übereinstimmt
-                Sys(K).Fusteig = Fu / Restlaenge 'steigung ermitteln
+                Sys(k).Fusteig = Fu / Restlaenge 'steigung ermitteln
                 
                 'm*g*cosa=m*g*Mue*sina'transportgut rutscht?
-                If Sys(K).E(16) <> 0 Then 'steigungswinkel
+                If Sys(k).E(16) <> 0 Then 'steigungswinkel
                     If Mue2 <> 0 Then
-                        If Tan(Abs(Sys(K).E(16)) * PI / 180) > Mue2 And Tan(Abs(Sys(K).E(16)) * PI / 180) <= Mue2 * 1.4 Then 'irgendwo zw. haft- und gleitreibung
+                        If Tan(Abs(Sys(k).E(16)) * PI / 180) > Mue2 And Tan(Abs(Sys(k).E(16)) * PI / 180) <= Mue2 * 1.4 Then 'irgendwo zw. haft- und gleitreibung
                             'Fehlerwert = Fehlerwert + 10
                             Fehler$ = Fehler$ & Lang_Res(619) & Chr$(13) & Chr$(10) '-Das Transportgut könnte auf dem Band rutschen
                         End If
-                        If Tan(Abs(Sys(K).E(16)) * PI / 180) > Mue2 * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
+                        If Tan(Abs(Sys(k).E(16)) * PI / 180) > Mue2 * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
                             'Zulässig = False
                             'Fehlerwert = Fehlerwert + 100
                             Fehler$ = Fehler$ & Lang_Res(620) & Chr$(13) & Chr$(10) '!-Das Transportgut wird auf dem Band rutschen
@@ -1365,11 +1366,11 @@ Dim i As Integer
                 
                 'stau, abweiser, freie umfangskraft
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         
                         'stau
                         If Sys(j).Tag = "204" And Restmasse >= 0 Then
-                            Sys(j).E(50) = 9.81 * (Sys(j).E(23) * Cos(Sys(K).E(16) * PI / 180)) * (Mue1 + mue) 'reibung band-tisch ist in der steigung enthalten
+                            Sys(j).E(50) = 9.81 * (Sys(j).E(23) * Cos(Sys(k).E(16) * PI / 180)) * (Mue1 + mue) 'reibung band-tisch ist in der steigung enthalten
                             
                             'stau hat nur reibung, keine potentialunterschiede
                             
@@ -1382,7 +1383,7 @@ Dim i As Integer
                             If Restmasse > MaxMasse Then 'ist überhaupt nichtgestaute masse übrig
                                 'beschaffenheit transportgut in Mue1 durch p/q enthalten
                                 'merk ist die kraft, mit der das Fördergut gegen abweiser drückt, wenn ein stau wäre, nur reibung!, druck durch schwerkraft entfällt gegenüber stau
-                                Merk = 9.81 * MaxMasse * Cos(Sys(K).E(16) * PI / 180) * (Mue1) 'auf tisch rutscht das gut rechnerisch oben, cos für steigung, aus reibung
+                                Merk = 9.81 * MaxMasse * Cos(Sys(k).E(16) * PI / 180) * (Mue1) 'auf tisch rutscht das gut rechnerisch oben, cos für steigung, aus reibung
                                 If Mue3 * 1.2 > Tan((90 - Sys(j).E(26)) * PI / 180) Then '1.2 selbsteingebauter angstfaktor
                                     Fehler$ = Fehler$ & Lang_Res(621) & j & Lang_Res(622) & Chr$(13) & Chr$(10)  '-Der Abweiser ("") läßt wahrscheinlich kein Transportgut durch (Berechnung ähnlich Stau)
                                     Fehlerwert = Fehlerwert + 10
@@ -1401,7 +1402,7 @@ Dim i As Integer
                         
                         'trägergebundene_Umfangskraft
                         If Sys(j).Tag = "206" Then
-                            Sys(j).E(50) = Sys(j).E(44) + Sys(K).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
+                            Sys(j).E(50) = Sys(j).E(44) + Sys(k).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
                             Fu = Fu + Sys(j).E(44) 'eingeleitete Kraft
                             'steigung für Spitzenlast wird unten bei der ermittlung der auflegedehnung ausgerechnet
                         End If
@@ -1410,17 +1411,17 @@ Dim i As Integer
                 
                 'spitzenlast bei beschleunigung der masse
                 If Restmasse > 0.1 And Restlaenge > 0.1 Then
-                    Sys(K).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
-                    Sys(K).FusteigSp = Sys(K).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
+                    Sys(k).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
+                    Sys(k).FusteigSp = Sys(k).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
                 Else
-                    Sys(K).E(98) = 0
-                    Sys(K).FusteigSp = 0
+                    Sys(k).E(98) = 0
+                    Sys(k).FusteigSp = 0
                 End If
-                Sys(K).FusteigSpRoll = 0 'nur zur Vorsicht, falls noch von früher was drinsteht
+                Sys(k).FusteigSpRoll = 0 'nur zur Vorsicht, falls noch von früher was drinsteht
                                 
-                Sys(K).E(50) = Fu 'alles auf den träger
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + Sys(K).E(22)
+                Sys(k).E(50) = Fu 'alles auf den träger
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + Sys(k).E(22)
             Case "103" ' Rollenbahn, Träger
                 DurchschMasse = 0
                 DurchschFaktor = 1
@@ -1429,7 +1430,7 @@ Dim i As Integer
                 Masse = 0 'masse enthält bewegte masse
                 Staumasse = 0
                 Staulänge = 0
-                Restlaenge = Sys(K).E(22)
+                Restlaenge = Sys(k).E(22)
                 Q = 0
                 M = 0
                 H = 0
@@ -1438,7 +1439,7 @@ Dim i As Integer
                 '28 = Masse dieser Transportgutart
                 
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         If Sys(j).Tag = "201" Then 'transportgut
                             'hier wird ein durchschnittlicher Korrekturfaktor ermittelt,
                             If Sys(j).E(32) > MaxMasse Then MaxMasse = Sys(j).E(32)
@@ -1456,7 +1457,7 @@ Dim i As Integer
                         End If
                     End If
                 Next j
-                Staulänge = Sys(K).E(22) - Restlaenge
+                Staulänge = Sys(k).E(22) - Restlaenge
                 If P > 0 And Q > 0 Then
                     DurchschFaktor = (P / Q) 'durchschnittlicher faktor für lager/rollreibung transportgut gegen tragrollen
                 End If
@@ -1467,7 +1468,7 @@ Dim i As Integer
 
                 Restmasse = Masse 'für abweiserberechnung und letzte notbremse, falls b_rex-hauptfenster versagt
                 If Restmasse < 0 Then
-                    Fehler$ = Fehler$ & Lang_Res(625) & K & Lang_Res(615) & Chr$(13) & Chr$(10)   '-Förderer: ... Stau und Abweiser mangels Transportgut nicht berechnet."
+                    Fehler$ = Fehler$ & Lang_Res(625) & k & Lang_Res(615) & Chr$(13) & Chr$(10)   '-Förderer: ... Stau und Abweiser mangels Transportgut nicht berechnet."
                 End If
                 
                 'durchschnitt aus den durchschnittsmassen der einzelnen transportgutarten :-)
@@ -1478,51 +1479,51 @@ Dim i As Integer
                 'masse kennt nur bewegte masse
                 
                 'potentialunterschied durch steigung herausarbeiten
-                If Sys(K).Rechts = False Then 'weils bei der rollenbahn nun mal anders herum ist
-                    Fu = Fu + Masse * 9.81 * Sin(Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                If Sys(k).Rechts = False Then 'weils bei der rollenbahn nun mal anders herum ist
+                    Fu = Fu + Masse * 9.81 * Sin(Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 Else
-                    Fu = Fu + Masse * 9.81 * Sin(-Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                    Fu = Fu + Masse * 9.81 * Sin(-Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 End If
                 
                 'massenkorrektur entsprechend der Steigung:
-                Masse = Masse * Cos(Sys(K).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegte gut und auf fu durch reibung, nicht vom reversieren abh.
-                DurchschMasse = DurchschMasse * Cos(Sys(K).E(16) * PI / 180) 'ditto
+                Masse = Masse * Cos(Sys(k).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegte gut und auf fu durch reibung, nicht vom reversieren abh.
+                DurchschMasse = DurchschMasse * Cos(Sys(k).E(16) * PI / 180) 'ditto
                 
                 'lager und rollreibung transportgut
-                Sys(K).E(67) = 0
-                Memo = (Sys(K).E(65) - Staulänge) / Sys(K).E(43) '(belege Länge -Staulänge)/tragrollenachsabstand, also bewegte rollenzahl
-                If Memo > 0 Then Sys(K).E(67) = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (Masse / Memo + 3)
+                Sys(k).E(67) = 0
+                Memo = (Sys(k).E(65) - Staulänge) / Sys(k).E(43) '(belege Länge -Staulänge)/tragrollenachsabstand, also bewegte rollenzahl
+                If Memo > 0 Then Sys(k).E(67) = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (Masse / Memo + 3)
          
                 'bandbiegeanteil, erst winkel, zur eindringtiefe die banddicke addieren
-                If Sys(K).E(71) = 0 Then
-                    P = Sys(K).E(11) ' eindringtiefe
+                If Sys(k).E(71) = 0 Then
+                    P = Sys(k).E(11) ' eindringtiefe
                 Else
-                    P = (Sys(K).E(43) / 2) * (Sys(K).E(71) / 2) / (1.5 * Sys(K).Furein) ' + Sys(K).E(67) * 1.2) 'gedachte eindringtiefe, damit die rechnung normal weitergehen kann, nur eine seite der andruckrolle
+                    P = (Sys(k).E(43) / 2) * (Sys(k).E(71) / 2) / (1.5 * Sys(k).Furein) ' + Sys(K).E(67) * 1.2) 'gedachte eindringtiefe, damit die rechnung normal weitergehen kann, nur eine seite der andruckrolle
                     'per verhältnisgleichung; Stau und Biegeleistung durch faktor 1.2 erfaßt, spart approximation und soll erst mal reichen
                 End If
-                Sys(K).E(12) = Atn((2 * (P + Sys(1).E(79)) / Sys(K).E(43))) * 180 / PI 'bandwinkel
+                Sys(k).E(12) = Atn((2 * (P + Sys(1).E(79)) / Sys(k).E(43))) * 180 / PI 'bandwinkel
                 
                 'mindestdurchmesserkontrolle trag/andruckrollen
-                If Sys(K).E(12) > 8 And Init_B_Rex_Minddurchmkontr = 1 Then 'nur wenn der winkel >8° ist
-                    If Sys(K).E(9) < Abs(Sys(1).E(86)) Then
+                If Sys(k).E(12) > 8 And Init_B_Rex_Minddurchmkontr = 1 Then 'nur wenn der winkel >8° ist
+                    If Sys(k).E(9) < Abs(Sys(1).E(86)) Then
                         'Zulässig = False
                         Fehlerwert = Fehlerwert + 100
                         Fehler$ = Fehler$ & Lang_Res(626) & Sys(1).E(86) & "mm)" & Chr$(13) & Chr$(10)  '!-Tragrollendurchmesser unterschreitet Mindestdurchmesser (
                     End If
-                    If Sys(K).E(10) < Abs(Sys(1).E(86)) Then
+                    If Sys(k).E(10) < Abs(Sys(1).E(86)) Then
                         'Zulässig = False
                         Fehlerwert = Fehlerwert + 100
                         Fehler$ = Fehler$ & Lang_Res(627) & Sys(1).E(86) & "mm)" & Chr$(13) & Chr$(10)  '!-Andruckrollendurchmesser unterschreitet Mindestdurchmesser (
                     End If
                 End If
                 
-                If Sys(K).E(12) > 0 Then 'tragwinkel zwischen trag-/ und andruckrolle
+                If Sys(k).E(12) > 0 Then 'tragwinkel zwischen trag-/ und andruckrolle
                     'tragrollen
-                    Sys(K).E(66) = (Sys(1).E(34) * Sys(K).E(62) * (4 + Sys(1).E(20)) * Sqr(Sys(K).E(12))) / Sys(K).E(9) * Sys(1).E(80)
+                    Sys(k).E(66) = (Sys(1).E(34) * Sys(k).E(62) * (4 + Sys(1).E(20)) * Sqr(Sys(k).E(12))) / Sys(k).E(9) * Sys(1).E(80)
                     'andruckrollen
-                    Sys(K).E(66) = Sys(K).E(66) + ((Sys(1).E(34) * Sys(K).E(62) * (4 + Sys(1).E(20)) * Sqr(Sys(K).E(12))) / Sys(K).E(10) * Sys(1).E(80)) / Sys(K).E(63)
+                    Sys(k).E(66) = Sys(k).E(66) + ((Sys(1).E(34) * Sys(k).E(62) * (4 + Sys(1).E(20)) * Sqr(Sys(k).E(12))) / Sys(k).E(10) * Sys(1).E(80)) / Sys(k).E(63)
                 Else
-                    Sys(K).E(66) = 0 'band berührt tragrollen garnicht
+                    Sys(k).E(66) = 0 'band berührt tragrollen garnicht
                     Fehlerwert = Fehlerwert + 10
                     Fehler$ = Fehler$ & Lang_Res(669) & Chr$(13) & Chr$(10) '!-Kein Kontakt Band-Tragrollen
                 End If
@@ -1530,23 +1531,23 @@ Dim i As Integer
                 If Restlaenge = 0 Then Restlaenge = 0.1 'falls staulänge mit trägerlänge übereinstimmt
                 
                 
-                Sys(K).Fusteig = (Fu + Sys(K).E(67)) / Restlaenge 'steigung durch lager/rollreibung und potentialunterschied auf nichtgestauter strecke
-                Sys(K).Fusteig = Sys(K).Fusteig + (Sys(K).E(66) / Sys(K).E(22) * Restlaenge) / Restlaenge '+ anteilig biegeleistung ohne die der staustrecke
+                Sys(k).Fusteig = (Fu + Sys(k).E(67)) / Restlaenge 'steigung durch lager/rollreibung und potentialunterschied auf nichtgestauter strecke
+                Sys(k).Fusteig = Sys(k).Fusteig + (Sys(k).E(66) / Sys(k).E(22) * Restlaenge) / Restlaenge '+ anteilig biegeleistung ohne die der staustrecke
                 
                 'Sys(K).Fusteig = (Fu + Sys(K).E(67)) / Restlaenge 'steigung durch lager/rollreibung und potentialunterschied auf nichtgestauter strecke
                 'Sys(K).Fusteig = Sys(K).Fusteig + Sys(K).E(66) / Sys(K).E(22) 'steigung durch bandbiegung am gesamten träger
                 'Fusteig = Sys(K).E(66) / Sys(K).E(22) 'noch beim stau dazurechnen, bandbiegung auch hier
                 'Fusteig1 = (Sys(K).E(66) + Sys(K).E(67)) / Sys(K).E(22) 'anteil für freie umfangskraft
-                Fu = Fu + Sys(K).Fusteig * Restlaenge
+                Fu = Fu + Sys(k).Fusteig * Restlaenge
                    
                 'trägerRestlaenge ermitteln
                 
                 'm*g*cosa=m*g*Mue*sina'transportgut rutscht? 0,22 grundsätzlich voraussetzen
-                If Tan(Abs(Sys(K).E(16)) * PI / 180) > 0.22 * DurchschFaktor And Tan(Abs(Sys(K).E(16)) * PI / 180) <= 0.22 * DurchschFaktor * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
+                If Tan(Abs(Sys(k).E(16)) * PI / 180) > 0.22 * DurchschFaktor And Tan(Abs(Sys(k).E(16)) * PI / 180) <= 0.22 * DurchschFaktor * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
                     Fehler$ = Fehler$ & Lang_Res(629) & Chr$(13) & Chr$(10)  '-Das Transportgut könnte auf der Rollenbahn rutschen
                     'Fehlerwert = Fehlerwert + 10
                 End If
-                If Tan(Abs(Sys(K).E(16)) * PI / 180) > 0.22 * DurchschFaktor * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
+                If Tan(Abs(Sys(k).E(16)) * PI / 180) > 0.22 * DurchschFaktor * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
                     'Zulässig = False
                     'Fehlerwert = Fehlerwert + 100
                     Fehler$ = Fehler$ & Lang_Res(630) & Chr$(13) & Chr$(10)  '!-Das Transportgut wird auf der Rollenbahn rutschen
@@ -1554,7 +1555,7 @@ Dim i As Integer
                 
                 'für stau und kontrollrechnung "mitnahme" unten
                 mue = Sys(1).E(77) 'andere seite Mue
-                If Sys(K).E(42) = 1 Then mue = Sys(1).E(78)
+                If Sys(k).E(42) = 1 Then mue = Sys(1).E(78)
                 
                 'If mue < 0 Then Fehler$ = Fehler$ & Lang_Res(631) & Chr$(13) & Chr$(10)  '-Reibungszahl Band-Tragrollen geschätzt
                 'mue = mue 'voraussetzung:tragrollen aus stahl
@@ -1564,15 +1565,15 @@ Dim i As Integer
                 
                 '***in die kontrollrechnungen aufnehmen und raus hier (einfach also am ende und nicht jedesmal, ist ja kein fehler
                 If Staumasse > 0 Then
-                    Memo = (9.81 * Staumasse * Cos(Sys(K).E(16) * PI / 180)) * 0.22 * DurchschFaktor 'würde bei reibung tragrolle gegen transportgut entstehen
+                    Memo = (9.81 * Staumasse * Cos(Sys(k).E(16) * PI / 180)) * 0.22 * DurchschFaktor 'würde bei reibung tragrolle gegen transportgut entstehen
                     'memo kraft durch stau transportgut-tragrollen
                     'memo zum abschätzen der furein/furaus für berechnung reibung tragrollen gegen band
                     'und zum vergleich mit daraus folgendem ergebnis memo1
                     'Mue finden
-                    Memo1 = (Sys(K).Furein + 2 * Sys(K).Furein) / 2 'abschätzung mittlere trumkraft unter der rollenbahn, iteration verhindern
-                    Memo1 = Sin(Sys(K).E(12) / 180 * PI) * Memo1 * 2 ' anpreßkraft an eine andruckrolle aus beiden trums
-                    If Sys(K).E(71) > 0 Then Memo1 = Sys(K).E(71) 'bei federbelasteten andruckrollen
-                    Memo1 = mue * ((Staulänge) / Sys(K).E(43) - 1) / Sys(K).E(63) * Memo1
+                    Memo1 = (Sys(k).Furein + 2 * Sys(k).Furein) / 2 'abschätzung mittlere trumkraft unter der rollenbahn, iteration verhindern
+                    Memo1 = Sin(Sys(k).E(12) / 180 * PI) * Memo1 * 2 ' anpreßkraft an eine andruckrolle aus beiden trums
+                    If Sys(k).E(71) > 0 Then Memo1 = Sys(k).E(71) 'bei federbelasteten andruckrollen
+                    Memo1 = mue * ((Staulänge) / Sys(k).E(43) - 1) / Sys(k).E(63) * Memo1
                     'memo1 ist jetzt ne kraft, staulänge unabhängig von laufrichtung
                     If Memo1 < 0 Then Memo1 = 0 'falls negative eindringtiefe gewählt wurde oder furein negativ reinkommt
                     If Memo1 > Memo Then
@@ -1591,7 +1592,7 @@ Dim i As Integer
                 
                 'bis hierher für rollenbahn gültig
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         'staumasse ist nicht vorab definiert
                         If Sys(j).Tag = "204" Then  'vom reversieren noch nicht abhängig, stau
                             If Memo1 >= Memo Then
@@ -1604,7 +1605,7 @@ Dim i As Integer
                             If Sys(j).E(46) = Sys(j).E(25) Then
                                 Fehler$ = Fehler$ & Lang_Res(706) & Chr$(13) & Chr$(10)
                             Else
-                                Sys(j).E(50) = Sys(j).E(50) + Sys(K).E(66) / Sys(K).E(22) * (Sys(j).E(46) - Sys(j).E(25))  'biegeleistung anteilig über die staulänge
+                                Sys(j).E(50) = Sys(j).E(50) + Sys(k).E(66) / Sys(k).E(22) * (Sys(j).E(46) - Sys(j).E(25))  'biegeleistung anteilig über die staulänge
                                 Fu = Fu + Sys(j).E(50)
                             End If
                         End If
@@ -1613,7 +1614,7 @@ Dim i As Integer
                                 Mue3 = Mue3 * Kst(Sys(j).E(15)).Einstellung 'reibungszahl gegen abweiser
                                 '0.2 bringt faktor von ca 1 auf reibungszahl zurück
                                 'merk ist die kraft, mit der das Fördergut gegen abweiser drückt, wenn ein stau wäre, nur reibung!, druck durch schwerkraft entfällt
-                                Merk = 9.81 * MaxMasse * Cos(Sys(K).E(16) * PI / 180) * 0.22 * DurchschFaktor 'auf tragrollen rutscht das gut rechnerisch oben, cos für steigung, aus reibung
+                                Merk = 9.81 * MaxMasse * Cos(Sys(k).E(16) * PI / 180) * 0.22 * DurchschFaktor 'auf tragrollen rutscht das gut rechnerisch oben, cos für steigung, aus reibung
                                 'der einfacheit halber: gut rutscht immer auf tragrollen
                                 If Mue3 * 1.2 > Tan((90 - Sys(j).E(26)) * PI / 180) Then '1.2 selbsteingebauter angstfaktor
                                     Fehlerwert = Fehlerwert + 10
@@ -1632,50 +1633,50 @@ Dim i As Integer
                             End If
                         End If
                         If Sys(j).Tag = "206" Then 'trägergebundene_Umfangskraft
-                            Sys(j).E(50) = Sys(j).E(44) + Sys(K).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
+                            Sys(j).E(50) = Sys(j).E(44) + Sys(k).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
                             Fu = Fu + Sys(j).E(44)  'eingeleitete Kraft
                             'steigung für Spitzenlast wird unten bei der ermittlung der auflegedehnung ausgerechnet
                         End If
                     End If
                 Next j
                     
-                Sys(K).E(50) = Fu 'alles auf den träger
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + Sys(K).E(22)
+                Sys(k).E(50) = Fu 'alles auf den träger
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + Sys(k).E(22)
                 
                 'spitzenlast bei beschleunigung der transportmasse
                     If Restmasse > 0.1 And Restlaenge > 0.1 Then
-                        Sys(K).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
-                        Sys(K).FusteigSp = Sys(K).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
+                        Sys(k).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
+                        Sys(k).FusteigSp = Sys(k).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
                     Else
-                        Sys(K).E(98) = 0
-                        Sys(K).FusteigSp = 0
+                        Sys(k).E(98) = 0
+                        Sys(k).FusteigSp = 0
                     End If
                     'und über massenträgheit der tragrollen
-                    P = Sys(K).E(62) * (Sys(1).E(68) * MassentraegheitsErmittlung(K) / (Sys(K).E(9) / 1000) ^ 2) 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
-                    Sys(K).FusteigSpRoll = P / Sys(K).E(22) 'in eine steigung übertragen
-                    Sys(K).E(98) = Sys(K).E(98) + P
+                    P = Sys(k).E(62) * (Sys(1).E(68) * MassentraegheitsErmittlung(k) / (Sys(k).E(9) / 1000) ^ 2) 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
+                    Sys(k).FusteigSpRoll = P / Sys(k).E(22) 'in eine steigung übertragen
+                    Sys(k).E(98) = Sys(k).E(98) + P
                     
                 'andruck vorn/hinten als service anbieten
-                P = Sys(K).E(63)
+                P = Sys(k).E(63)
                 If P > 2 Then P = 2 'mehr als 2 tragrollen können von einer anpreßrolle nicht berührt werden
-                If Sys(K).E(71) > 0 Then 'anpreßkraft festgelegt
-                    Sys(K).E(69) = Sys(K).E(71) / P 'tatsächliche kraft auf eine Scheibe
-                    M = Sys(K).E(71) / Sys(K).E(63) 'gemittelte kraft auf eine scheibe, später noch zur berechnung, ob andruck ausreicht
-                    Sys(K).E(70) = Sys(K).E(69) 'also vorne und hinten gleich
+                If Sys(k).E(71) > 0 Then 'anpreßkraft festgelegt
+                    Sys(k).E(69) = Sys(k).E(71) / P 'tatsächliche kraft auf eine Scheibe
+                    M = Sys(k).E(71) / Sys(k).E(63) 'gemittelte kraft auf eine scheibe, später noch zur berechnung, ob andruck ausreicht
+                    Sys(k).E(70) = Sys(k).E(69) 'also vorne und hinten gleich
                 Else
-                    Sys(K).E(69) = (2 * Sin(Sys(K).E(12) / 180 * PI) * Sys(K).Furein) / P 'vorne die 2, weils ja 2 stränge sind
-                    Sys(K).E(70) = (2 * Sin(Sys(K).E(12) / 180 * PI) * Sys(K).Furaus) / P
-                    M = (2 * Sin(Sys(K).E(12) / 180 * PI) * Sys(K).Furein) / Sys(K).E(63) 'vorne die 2, weils ja 2 stränge sind
+                    Sys(k).E(69) = (2 * Sin(Sys(k).E(12) / 180 * PI) * Sys(k).Furein) / P 'vorne die 2, weils ja 2 stränge sind
+                    Sys(k).E(70) = (2 * Sin(Sys(k).E(12) / 180 * PI) * Sys(k).Furaus) / P
+                    M = (2 * Sin(Sys(k).E(12) / 180 * PI) * Sys(k).Furein) / Sys(k).E(63) 'vorne die 2, weils ja 2 stränge sind
                 End If
                 
                 'kontrolle, ob auch die mitnahme gewährleistet ist
-                Memo = Sys(K).E(64) / Sys(K).E(43) 'rollenzahl unter einem durchschn. Transportgut
+                Memo = Sys(k).E(64) / Sys(k).E(43) 'rollenzahl unter einem durchschn. Transportgut
                 Memo1 = Memo
                 If Reversieren = True Then 'weils bei der rollenbahn nun mal anders herum ist
-                    Memo = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (DurchschMasse / Memo + 3) + DurchschMasse * 9.81 * Sin(Sys(K).E(16) * PI / 180) 'm*g*sin alpha'+potentialunterschied
+                    Memo = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (DurchschMasse / Memo + 3) + DurchschMasse * 9.81 * Sin(Sys(k).E(16) * PI / 180) 'm*g*sin alpha'+potentialunterschied
                 Else
-                    Memo = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (DurchschMasse / Memo + 3) + DurchschMasse * 9.81 * Sin(-Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                    Memo = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (DurchschMasse / Memo + 3) + DurchschMasse * 9.81 * Sin(-Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 End If
                 Memo = Abs(Memo) 'enthält verformungsarbeit am transportgut
                 'Memo = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (DurchschMasse / Memo + 3) 'umfangskraft durch biegung
@@ -1688,7 +1689,7 @@ Dim i As Integer
                 Fu = 0
                 Masse = 0
                 Staulänge = 0
-                Restlaenge = Sys(K).E(22)
+                Restlaenge = Sys(k).E(22)
                 MaxMasse = 0
                 P = 0
                 Q = 0
@@ -1696,7 +1697,7 @@ Dim i As Integer
                 Memo = 1
                 DurchschFaktor = 1
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         If Sys(j).Tag = "201" Then
                             If Sys(j).E(32) > MaxMasse Then MaxMasse = Sys(j).E(32)
                             Masse = Masse + Sys(j).E(28)
@@ -1708,10 +1709,10 @@ Dim i As Integer
                             Masse = Masse - Sys(j).E(23) 'andere staumassen abziehen
                             Staulänge = Staulänge + (Sys(j).E(46) - Sys(j).E(25))
                             Restlaenge = Restlaenge - (Sys(j).E(46) - Sys(j).E(25))
-                            If Sys(K).E(41) = 1 Then Tragseite_Mue_verwendet = True '1 heißt laufseite zu den rollen, also tragseite zum transportgut
+                            If Sys(k).E(41) = 1 Then Tragseite_Mue_verwendet = True '1 heißt laufseite zu den rollen, also tragseite zum transportgut
                         End If
                         If Sys(j).Tag = "205" Then
-                            If Sys(K).E(41) = 1 Then Tragseite_Mue_verwendet = True '1 heißt laufseite zu den rollen, also tragseite zum transportgut
+                            If Sys(k).E(41) = 1 Then Tragseite_Mue_verwendet = True '1 heißt laufseite zu den rollen, also tragseite zum transportgut
                         End If
                     End If
                 Next j
@@ -1724,24 +1725,24 @@ Dim i As Integer
                 If Restlaenge <= 0 Then Restlaenge = 0.1 'falls staulänge mit trägerlänge übereinstimmt
                 
                 If Restmasse < 0 Then
-                    Fehler$ = Fehler$ & Lang_Res(625) & K & Lang_Res(615) & Chr$(13) & Chr$(10)   '-Förderer: ... Stau und Abweiser mangels Transportgut nicht berechnet.
+                    Fehler$ = Fehler$ & Lang_Res(625) & k & Lang_Res(615) & Chr$(13) & Chr$(10)   '-Förderer: ... Stau und Abweiser mangels Transportgut nicht berechnet.
                 End If
                 If Masse < 0 Then Masse = 0 'kann passieren, wenn stau ohne transportgut da ist
                                 
-                If Sys(K).Rechts = True Then
-                    Fu = Fu + Masse * 9.81 * Sin(Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                If Sys(k).Rechts = True Then
+                    Fu = Fu + Masse * 9.81 * Sin(Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 Else
-                    Fu = Fu + Masse * 9.81 * Sin(-Sys(K).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
+                    Fu = Fu + Masse * 9.81 * Sin(-Sys(k).E(16) * PI / 180) 'm*g*sin alpha 'fu durch potentialunterschiede mit dieser masse berechnen
                 End If
                 
                 'bandmasse ist bei potentialunterschied nicht dabei, denn die befindet sich im kreislauf
-                Masse = Masse + (Sys(K).E(22) / 1000 * Sys(1).E(34) / 1000) * Sys(1).E(81) 'bandmasse dazuzählen
+                Masse = Masse + (Sys(k).E(22) / 1000 * Sys(1).E(34) / 1000) * Sys(1).E(81) 'bandmasse dazuzählen
                 
                 'massenkorrektur entsprechend der Steigung, wir später zur biegeleistung verarbeitet
-                Masse = Masse * Cos(Sys(K).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegtes gut und auf fu durch reibung entspr der neigung, nicht vom reversieren abh.
+                Masse = Masse * Cos(Sys(k).E(16) * PI / 180) 'masse bezieht sich jetzt nur auf das zur zeit bewegtes gut und auf fu durch reibung entspr der neigung, nicht vom reversieren abh.
                 
                 'stau und abweiser berechnen, Mue1 reibwert zwischen band und transportgut
-                If Sys(K).E(41) = 1 Then
+                If Sys(k).E(41) = 1 Then
                     Mue1 = Sys(1).E(77) 'tragseite nach oben
                 Else
                     Mue1 = Sys(1).E(78) 'laufseite nach oben
@@ -1754,13 +1755,13 @@ Dim i As Integer
 
                 
                 'm*g*cosa=m*g*Mue*sina'transportgut rutscht?
-                If Sys(K).E(16) <> 0 Then 'steigungswinkel
+                If Sys(k).E(16) <> 0 Then 'steigungswinkel
                     If Mue2 <> 0 Then
-                        If Tan(Abs(Sys(K).E(16)) * PI / 180) > Mue2 And Tan(Abs(Sys(K).E(16)) * PI / 180) <= Mue2 * 1.4 Then '1.3 Haftreibungsverhältnis zu gleitreibungsverhältnis
+                        If Tan(Abs(Sys(k).E(16)) * PI / 180) > Mue2 And Tan(Abs(Sys(k).E(16)) * PI / 180) <= Mue2 * 1.4 Then '1.3 Haftreibungsverhältnis zu gleitreibungsverhältnis
                             Fehler$ = Fehler$ & Lang_Res(619) & Chr$(13) & Chr$(10)  '-Das Transportgut könnte auf dem Band rutschen
                             'Fehlerwert = Fehlerwert + 10
                         End If
-                        If Tan(Abs(Sys(K).E(16)) * PI / 180) > Mue2 * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
+                        If Tan(Abs(Sys(k).E(16)) * PI / 180) > Mue2 * 1.4 Then '1.4 Haftreibungsverhältnis zu gleitreibungsverhältnis
                             'Fehlerwert = Fehlerwert + 100
                             'Zulässig = False
                             Fehler$ = Fehler$ & Lang_Res(620) & Chr$(13) & Chr$(10)  '!-Das Transportgut wird auf dem Band rutschen
@@ -1776,17 +1777,17 @@ Dim i As Integer
                 '43 = Tragrollenachsabstand
                 'DurchschFaktor = durchschnittlicher Faktor fuer tragrollenreibung
                 
-                Sys(K).E(67) = 0
-                Memo = Sys(K).E(22) / Sys(K).E(43) 'bewegte rollenzahl
-                Sys(K).E(67) = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (Masse / Memo + 3)
+                Sys(k).E(67) = 0
+                Memo = Sys(k).E(22) / Sys(k).E(43) 'bewegte rollenzahl
+                Sys(k).E(67) = Sys(1).E(20) * (DurchschFaktor / 6.66) * Memo * (Masse / Memo + 3)
                 
-                Fu = Fu + Sys(K).E(67)
-                Sys(K).Fusteig = Fu / Restlaenge 'steigung ermitteln
+                Fu = Fu + Sys(k).E(67)
+                Sys(k).Fusteig = Fu / Restlaenge 'steigung ermitteln
                 
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         If Sys(j).Tag = "204" Then  'vom reversieren noch nicht abhängig, stau
-                            Sys(j).E(50) = 9.81 * (Sys(j).E(23) * Cos(Sys(K).E(16) * PI / 180)) * Mue1  'reibung band-tisch ist in der steigung enthalten
+                            Sys(j).E(50) = 9.81 * (Sys(j).E(23) * Cos(Sys(k).E(16) * PI / 180)) * Mue1  'reibung band-tisch ist in der steigung enthalten
                             Fu = Fu + Sys(j).E(50)
                         End If
                         If Sys(j).Tag = "205" Then 'abweiser
@@ -1794,7 +1795,7 @@ Dim i As Integer
                                 Mue3 = Memo * (Kst(Sys(j).E(15)).Einstellung * 0.2) 'reibungszahl gegen abweiser
                                 'beschaffenheit transportgut in Mue1 durch p/q enthalten
                                 'merk ist die kraft, mit der das Fördergut gegen abweiser drückt, wenn ein stau wäre, nur reibung!, druck durch schwerkraft entfällt
-                                Merk = 9.81 * MaxMasse * Cos(Sys(K).E(16) * PI / 180) * (Mue1) 'auf tisch rutscht das gut rechnerisch oben, cos für steigung, aus reibung
+                                Merk = 9.81 * MaxMasse * Cos(Sys(k).E(16) * PI / 180) * (Mue1) 'auf tisch rutscht das gut rechnerisch oben, cos für steigung, aus reibung
                                 If Mue3 * 1.2 > Tan((90 - Sys(j).E(26)) * PI / 180) Then '1.2 selbsteingebauter angstfaktor
                                     Fehlerwert = Fehlerwert + 10
                                     Fehler$ = Fehler$ & Lang_Res(621) & j & Lang_Res(622) & Chr$(13) & Chr$(10)   '-Der Abweiser ... läßt wahrscheinlich kein Transportgut durch (Berechnung ähnlich Stau)
@@ -1811,70 +1812,70 @@ Dim i As Integer
                             End If
                         End If
                         If Sys(j).Tag = "206" Then 'trägergebundene_Umfangskraft
-                            Sys(j).E(50) = Sys(j).E(44) + Sys(K).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
+                            Sys(j).E(50) = Sys(j).E(44) + Sys(k).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
                             Fu = Fu + Sys(j).E(44) 'eingeleitete Kraft
                             'steigung für Spitzenlast wird unten bei der ermittlung der auflegedehnung ausgerechnet
                         End If
                     End If
                 Next j
-                Sys(K).E(50) = Fu 'alles auf den träger
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + Sys(K).E(22)
+                Sys(k).E(50) = Fu 'alles auf den träger
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + Sys(k).E(22)
                 
                 'spitzenlast bei beschleunigung der transportmasse
                     If Restmasse > 0.1 And Restlaenge > 0.1 Then
-                        Sys(K).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
-                        Sys(K).FusteigSp = Sys(K).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
+                        Sys(k).E(98) = Restmasse * Sys(1).E(68) 'F = m*a
+                        Sys(k).FusteigSp = Sys(k).E(98) / Restlaenge 'diese steigung durch die beschleunigung der ungestauten transportmasse
                     Else
-                        Sys(K).E(98) = 0
-                        Sys(K).FusteigSp = 0
+                        Sys(k).E(98) = 0
+                        Sys(k).FusteigSp = 0
                     End If
                     'und über massenträgheit der tragrollen
-                    P = Sys(K).E(62) * (Sys(1).E(68) * MassentraegheitsErmittlung(K) / (Sys(K).E(9) / 2000) ^ 2) 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
-                    Sys(K).FusteigSpRoll = P / Sys(K).E(22) 'in eine steigung übertragen
-                    Sys(K).E(98) = Sys(K).E(98) + P
+                    P = Sys(k).E(62) * (Sys(1).E(68) * MassentraegheitsErmittlung(k) / (Sys(k).E(9) / 2000) ^ 2) 'J*a/r^2  wenn eins fehlt, ist alles zusammen e null
+                    Sys(k).FusteigSpRoll = P / Sys(k).E(22) 'in eine steigung übertragen
+                    Sys(k).E(98) = Sys(k).E(98) + P
 
             Case "104" 'freie_Umfangskraft,träger
-                j = K 'nach trägergebundene_Umfangskraft suchen
-                Fu = Sys(K).E(44)
-                Sys(K).Fusteig = Sys(K).E(44) / Sys(K).E(22) 'steigung ermitteln
+                j = k 'nach trägergebundene_Umfangskraft suchen
+                Fu = Sys(k).E(44)
+                Sys(k).Fusteig = Sys(k).E(44) / Sys(k).E(22) 'steigung ermitteln
                 For j = 9 To Maxelementindex
-                    If Sys(j).Zugehoerigkeit = K Then
+                    If Sys(j).Zugehoerigkeit = k Then
                         If Sys(j).Tag = "206" Then 'trägergebundene_Umfangskraft
-                            Sys(j).E(50) = Sys(j).E(44) + Sys(K).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
+                            Sys(j).E(50) = Sys(j).E(44) + Sys(k).Fusteig * (Sys(j).E(46) - Sys(j).E(25))
                             Fu = Fu + Sys(j).E(44)  'eingeleitete Kraft
                         End If
                     End If
                 Next j
-                Sys(K).FusteigSp = Sys(K).E(98) / Sys(K).E(22)
-                Sys(K).E(50) = Fu 'alles auf den träger
-                Sys(K).Furaus = Sys(K).Furein + Fu
-                Sys(K).Lraus = Sys(K).Lrein + Sys(K).E(22)
+                Sys(k).FusteigSp = Sys(k).E(98) / Sys(k).E(22)
+                Sys(k).E(50) = Fu 'alles auf den träger
+                Sys(k).Furaus = Sys(k).Furein + Fu
+                Sys(k).Lraus = Sys(k).Lrein + Sys(k).E(22)
         End Select
       
-        Fuletztes = Sys(K).Furaus
-        If Fumax < Sys(K).Furaus Then Fumax = Sys(K).Furaus 'speichert die höchste Kraft
-        If Fumin > Sys(K).Furaus Then
-            Fumin = Sys(K).Furaus
+        Fuletztes = Sys(k).Furaus
+        If Fumax < Sys(k).Furaus Then Fumax = Sys(k).Furaus 'speichert die höchste Kraft
+        If Fumin > Sys(k).Furaus Then
+            Fumin = Sys(k).Furaus
         End If
         
         'wurde gebraucht, ist aber nicht in der Datenbank, dann darauf hinweisen
         'würde man die selten gebrauchte Tragseitenreibungszahl zur Pflicht machen, ginge die automatische Bandauslegung schief
         If Tragseite_Mue_verwendet = True And Sys(1).E(77) = 0 Then
-            Fehler$ = Fehler$ & Lang_Res(702) & K & Lang_Res(703) & Chr$(13) & Chr$(10)   '- Element ... Reibungszahl Tragseite/Antriebsseite des Bandes wurde gebraucht, aber nicht gefunden
+            Fehler$ = Fehler$ & Lang_Res(702) & k & Lang_Res(703) & Chr$(13) & Chr$(10)   '- Element ... Reibungszahl Tragseite/Antriebsseite des Bandes wurde gebraucht, aber nicht gefunden
         End If
         
         'GoSub Wellenbelastung_abgleichen
-        If K = ScheibeFedGew Then GoSub Wellenbelastung_abgleichen 'falls die antriebsscheibe betroffen ist
+        If k = ScheibeFedGew Then GoSub Wellenbelastung_abgleichen 'falls die antriebsscheibe betroffen ist
         
         'einstellungen für den nächsten durchlauf, nicht wieder zum alten element zurück
         'k ist die naechste, ialtk die letzte scheibe
-        If Sys(K).Verb(1, 1) = IaltK Then 'voreinstellungen für neuen durchlauf
-            IaltK = K
-            K = Sys(K).Verb(2, 1)
+        If Sys(k).Verb(1, 1) = IaltK Then 'voreinstellungen für neuen durchlauf
+            IaltK = k
+            k = Sys(k).Verb(2, 1)
         Else
-            IaltK = K
-            K = Sys(K).Verb(1, 1)
+            IaltK = k
+            k = Sys(k).Verb(1, 1)
         End If
         
         'eigenfrequenz/erregerfrequenzberechnung
@@ -1882,10 +1883,10 @@ Dim i As Integer
             'drum trumeigenfrequenzberechnung ab ialtk zu k (neu) hier,
             'eintragen in beide, bewertung findet unter kontrollrechnung statt,
             'wo das mit stoerfrequenzen von scheiben abgeglichen wird
-            Call Eigenfrequenzberechnung(K, IaltK, False)
+            Call Eigenfrequenzberechnung(k, IaltK, False)
         
             
-    Loop Until K = Antriebsscheibe Or K >= Maxelementindex + 1 'einmal rum oder es ist was schiefgegangen
+    Loop Until k = Antriebsscheibe Or k >= Maxelementindex + 1 'einmal rum oder es ist was schiefgegangen
     
 
     
@@ -1904,7 +1905,7 @@ Dim i As Integer
         Sys(Antriebsscheibe).Furaus = Fuerstes 'enthält fliehkraft
         Sys(Antriebsscheibe).E(50) = Fuletztes - Fuerstes
         
-    Call Eigenfrequenzberechnung(K, Startelement, True) 'die erste strecke kommt sonst zu kurz, furaus mus erst da sein
+    Call Eigenfrequenzberechnung(k, Startelement, True) 'die erste strecke kommt sonst zu kurz, furaus mus erst da sein
         
         
         'Spitzenlast (beschleunigung der eigenen masse):
@@ -1914,7 +1915,7 @@ Dim i As Integer
         Sys(Antriebsscheibe).Furein = Fuletztes 'enthält fliehkraft
     
     'nur noch bei antriebsscheibe, wenn furaus ermittelt:
-        If K = ScheibeFedGew Then GoSub Wellenbelastung_abgleichen 'falls die antriebsscheibe betroffen ist
+        If k = ScheibeFedGew Then GoSub Wellenbelastung_abgleichen 'falls die antriebsscheibe betroffen ist
     
     
     'alle furein/furaus Muessen bekannt sein
@@ -1960,14 +1961,14 @@ Wellenbelastung_abgleichen:
         'son zirkus, weil die stellung zum gewicht geklärt werden muß
         'das wird nur wichtig, wenn die scheibe auch noch umfangskräfte hat
         'sonst haben die beiden trums e etwa gleiche kräfte
-            Memo = Sys(K).E(56) 'winkel zum höheren element
-            Merk = Sys(K).E(57)
-            Q = Sys(K).Furein ' - Fliehkraftsumme 'immer kleiner
-            M = Sys(K).Furaus ' - Fliehkraftsumme 'immer größer
+            Memo = Sys(k).E(56) 'winkel zum höheren element
+            Merk = Sys(k).E(57)
+            Q = Sys(k).Furein ' - Fliehkraftsumme 'immer kleiner
+            M = Sys(k).Furaus ' - Fliehkraftsumme 'immer größer
             
             'trum passend
-            i = Sys(K).Verb(1, 1)
-            If Sys(K).Verb(2, 1) > Sys(K).Verb(1, 1) Then i = Sys(K).Verb(2, 1)
+            i = Sys(k).Verb(1, 1)
+            If Sys(k).Verb(2, 1) > Sys(k).Verb(1, 1) Then i = Sys(k).Verb(2, 1)
             
             'alte variante, ausgetauscht sep 2009
                 'i enthält höheres der beiden verb. elemente
@@ -1987,15 +1988,15 @@ Wellenbelastung_abgleichen:
             'P = (Q + M) * Cos((Memo + Merk) / 2 * PI / 180) 'FR = (F1+F2)*cos (alpha/2), aus Kraftberechnung im parallelogram
             
             'weg damit ab 2011, wieder die variante 2009 inkraft gesetzt
-                FwScheibeFedGew = P - Sys(K).E(51) 'merken, um es mit sys(...).e(54) bei der iteration zu vergleichen
+                FwScheibeFedGew = P - Sys(k).E(51) 'merken, um es mit sys(...).e(54) bei der iteration zu vergleichen
             
         Return
 End Sub
-Private Sub Eigenfrequenzberechnung(ByVal K As Integer, ByVal IaltK As Integer, Antriebsscheibendurchlauf As Boolean)
+Private Sub Eigenfrequenzberechnung(ByVal k As Integer, ByVal IaltK As Integer, Antriebsscheibendurchlauf As Boolean)
 Dim ZW As Boolean
 Dim Furaus
-'Exit Sub
-'On Error GoTo Errorhandler
+
+
 Furaus = Sys(IaltK).Furaus
 If Zweischeiben = True And Antriebsscheibendurchlauf = True Then
     ZW = True
@@ -2007,32 +2008,32 @@ End If
     'problem: bei zweischeibe sind beide zweimal miteinander verbunden,
     'deswegen werden beide ergebnisse immer in nur eine verbindung eingetragen
     
-    If Sys(K).Verb(1, 1) = IaltK And ZW = False Then  'die erste der beiden verbindungen
+    If Sys(k).Verb(1, 1) = IaltK And ZW = False Then  'die erste der beiden verbindungen
         'f = 1/l*sqr(F/(4*G)) laenge in m, drum statt 1 die 1000
         '34 bandbreite
         '81 bandmasse in kg/m^2
         'verb 1,3 und 2,3 sind die trumlaengen zwischen den elementen
-        If Sys(K).Verb(1, 3) > 0 Then 'vielleicht gibts da kein frei schwingendes trum
-            Sys(K).Verb(1, 4) = 1000 / Sys(K).Verb(1, 3) * Sqr(Furaus / (4 * Sys(1).E(81) * Sys(1).E(34) / 1000)) 'G muss erst auf kg/m umgerechnet werden, auch wenns dann eiheitenmaessig nicht hinkommt.
-            Sys(K).E(112) = Sys(K).Verb(1, 4)
-            If Sys(IaltK).Verb(1, 1) = K Then 'auch auf der anderen seite das ergebnis eintragen
-                Sys(IaltK).Verb(1, 4) = Sys(K).Verb(1, 4)
-                Sys(IaltK).E(112) = Sys(K).Verb(1, 4) 'nur zum merken, damit der kunde auch was sieht
+        If Sys(k).Verb(1, 3) > 0 Then 'vielleicht gibts da kein frei schwingendes trum
+            Sys(k).Verb(1, 4) = 1000 / Sys(k).Verb(1, 3) * Sqr(Furaus / (4 * Sys(1).E(81) * Sys(1).E(34) / 1000)) 'G muss erst auf kg/m umgerechnet werden, auch wenns dann eiheitenmaessig nicht hinkommt.
+            Sys(k).E(112) = Sys(k).Verb(1, 4)
+            If Sys(IaltK).Verb(1, 1) = k Then 'auch auf der anderen seite das ergebnis eintragen
+                Sys(IaltK).Verb(1, 4) = Sys(k).Verb(1, 4)
+                Sys(IaltK).E(112) = Sys(k).Verb(1, 4) 'nur zum merken, damit der kunde auch was sieht
             Else
-                Sys(IaltK).Verb(2, 4) = Sys(K).Verb(1, 4)
-                Sys(IaltK).E(113) = Sys(K).Verb(1, 4)
+                Sys(IaltK).Verb(2, 4) = Sys(k).Verb(1, 4)
+                Sys(IaltK).E(113) = Sys(k).Verb(1, 4)
             End If
         End If
     Else 'die zweite
-        If Sys(K).Verb(2, 3) > 0 Then
-            Sys(K).Verb(2, 4) = 1000 / Sys(K).Verb(2, 3) * Sqr(Furaus / (4 * Sys(1).E(81) * Sys(1).E(34) / 1000)) 'G muss erst auf kg/m umgerechnet werden, auch wenns dann eiheitenmaessig nicht hinkommt.
-            Sys(K).E(113) = Sys(K).Verb(2, 4)
-            If Sys(IaltK).Verb(1, 1) = K And ZW = False Then 'auch auf der anderen seite das ergebnis eintragen
-                Sys(IaltK).Verb(1, 4) = Sys(K).Verb(2, 4)
-                Sys(IaltK).E(112) = Sys(K).Verb(2, 4)
+        If Sys(k).Verb(2, 3) > 0 Then
+            Sys(k).Verb(2, 4) = 1000 / Sys(k).Verb(2, 3) * Sqr(Furaus / (4 * Sys(1).E(81) * Sys(1).E(34) / 1000)) 'G muss erst auf kg/m umgerechnet werden, auch wenns dann eiheitenmaessig nicht hinkommt.
+            Sys(k).E(113) = Sys(k).Verb(2, 4)
+            If Sys(IaltK).Verb(1, 1) = k And ZW = False Then 'auch auf der anderen seite das ergebnis eintragen
+                Sys(IaltK).Verb(1, 4) = Sys(k).Verb(2, 4)
+                Sys(IaltK).E(112) = Sys(k).Verb(2, 4)
             Else
-                Sys(IaltK).Verb(2, 4) = Sys(K).Verb(2, 4)
-                Sys(IaltK).E(113) = Sys(K).Verb(2, 4)
+                Sys(IaltK).Verb(2, 4) = Sys(k).Verb(2, 4)
+                Sys(IaltK).E(113) = Sys(k).Verb(2, 4)
             End If
         End If
     End If
@@ -2044,8 +2045,8 @@ Public Sub Grafik(ByVal Drucken As Boolean)
 'wird immer erst am ende der rechnung ausgerufen
 
 Dim Tickx As Double, Ticky As Double, L As Double, i As Double, j As Double, Fuvolumen As Double
-Dim K As Double, P As Double, Q As Double, H As Double, B As Double
-Dim V As Double
+Dim k As Double, P As Double, Q As Double, H As Double, b As Double
+Dim v As Double
 Dim Ymax, Dumy As Double
 Dim Dummy$
 Dim Strichbreite As Integer
@@ -2116,13 +2117,13 @@ End If
             'Y = ((Y2 - Y1) / (X2 - X1)) * (X - X1) + Y1
             'idee: 2 punkte habe ich, die koordinaten des dritten werden berechenbar
             
-        B = (FuScaleY2 - FuScaleY1) / (Drucky + 800 - Drucky)
-        Destination.ScaleTop = B * (0 - Drucky) + FuScaleY1 'mit dem selben maßstab die y-achse. oben, falls er nicht oben begonnen hat
-        Destination.ScaleHeight = B * 2960 ' - Destination.ScaleTop  'mit dem selben maßstab die y-achse
+        b = (FuScaleY2 - FuScaleY1) / (Drucky + 800 - Drucky)
+        Destination.ScaleTop = b * (0 - Drucky) + FuScaleY1 'mit dem selben maßstab die y-achse. oben, falls er nicht oben begonnen hat
+        Destination.ScaleHeight = b * 2960 ' - Destination.ScaleTop  'mit dem selben maßstab die y-achse
         
-        B = (FuScaleX2 - FuScaleX1) / (1340 - 235) '1340 statt 1390 (235 statt 195) ist unsauber, aber als provisorium erstaml ausreichend
-        Destination.ScaleLeft = B * (0 - 235) + FuScaleX1
-        Destination.ScaleWidth = B * 2100
+        b = (FuScaleX2 - FuScaleX1) / (1340 - 235) '1340 statt 1390 (235 statt 195) ist unsauber, aber als provisorium erstaml ausreichend
+        Destination.ScaleLeft = b * (0 - 235) + FuScaleX1
+        Destination.ScaleWidth = b * 2100
         
         H = Destination.TextWidth("000.00---")
         P = Abs(Destination.TextHeight("0"))
@@ -2181,14 +2182,14 @@ End If
             Mid(Dummy$, i, 1) = "0"
         Next i
         Tickx = Val(Dummy$)
-        K = 0
+        k = 0
         Do
-            Destination.Line (K, Fumin)-(K, Fumin - P / 2)
+            Destination.Line (k, Fumin)-(k, Fumin - P / 2)
             Destination.CurrentY = Fumin - P / 2
-            Destination.CurrentX = K - Destination.TextWidth(K) / 2
-            Destination.Print K
-            K = K + Tickx
-        Loop Until K > L
+            Destination.CurrentX = k - Destination.TextWidth(k) / 2
+            Destination.Print k
+            k = k + Tickx
+        Loop Until k > L
     
     'y-Achse beschriften
         If Fumin >= 0 Then
@@ -2203,28 +2204,28 @@ End If
         Next i
         Ticky = Val(Dummy$)
         If Ymax / Ticky > 7 Then Ticky = Ticky * 2
-        K = 0
-        Do While K > Fumin
-            K = K - Ticky
+        k = 0
+        Do While k > Fumin
+            k = k - Ticky
         Loop
-        If K < 0 Then K = K + Ticky
+        If k < 0 Then k = k + Ticky
         Q = Destination.TextWidth("0")
         
         Destination.DrawWidth = 1
         Do
-            Destination.Line (0, K)-(-Q, K) 'fu
+            Destination.Line (0, k)-(-Q, k) 'fu
             'Destination.Line (L, K)-(L + Q, K) 'dehn
             Destination.DrawStyle = 2
-            Destination.Line (0, K)-(L, K) 'dehn
+            Destination.Line (0, k)-(L, k) 'dehn
             Destination.DrawStyle = 0
-            Destination.CurrentX = -Destination.TextWidth(Str(K) & "  ")
-            Destination.CurrentY = K - Destination.TextHeight(K) / 2
-            Destination.Print K 'fu
+            Destination.CurrentX = -Destination.TextWidth(Str(k) & "  ")
+            Destination.CurrentY = k - Destination.TextHeight(k) / 2
+            Destination.Print k 'fu
             Destination.CurrentX = L + 1.5 * Q
-            Destination.CurrentY = K - Destination.TextHeight(K) / 2
-            Destination.Print Format(K * 2 / (SystemTyp.Kraftdehnung * Sys(1).E(34)), "#####0.00") 'auflegedehnung
-            K = K + Ticky
-        Loop Until K > Ymax
+            Destination.CurrentY = k - Destination.TextHeight(k) / 2
+            Destination.Print Format(k * 2 / (SystemTyp.Kraftdehnung * Sys(1).E(34)), "#####0.00") 'auflegedehnung
+            k = k + Ticky
+        Loop Until k > Ymax
         
         'fehlerwerte eintragen
                 Destination.Line (L, 0)-(L + Q, (Fehlerverlauf(1, 0) + Fehlerverlauf(1, 1)) / 2), vbRed, BF 'QBColor(12), BF 'dehn am anfang sowieso rot
@@ -2232,15 +2233,15 @@ End If
             i = 1
             Do Until i >= Rechengenauigkeit - 2 Or Fehlerverlauf(1, i) >= Ymax
                 'If Drucken = False Then
-                    K = B_Rex_Yellow '&H80FFFF '14 'gelb
-                    If Fehlerverlauf(2, i) = 0 Then K = B_Rex_Green '&H80FF80 '10 'grün
-                    If Fehlerverlauf(2, i) >= 100 Then K = vbRed '&H8080FF '12 'rot
+                    k = B_Rex_Yellow '&H80FFFF '14 'gelb
+                    If Fehlerverlauf(2, i) = 0 Then k = B_Rex_Green '&H80FF80 '10 'grün
+                    If Fehlerverlauf(2, i) >= 100 Then k = vbRed '&H8080FF '12 'rot
                 Dumy = (Fehlerverlauf(1, i) + Fehlerverlauf(1, i + 1)) / 2
                 If Dumy > Ymax Then
                     Dumy = Ymax
                     'Stop
                 End If
-                Destination.Line (L, (Fehlerverlauf(1, i) + Fehlerverlauf(1, i - 1)) / 2)-(L + Q, Dumy), K, BF 'dehn
+                Destination.Line (L, (Fehlerverlauf(1, i) + Fehlerverlauf(1, i - 1)) / 2)-(L + Q, Dumy), k, BF 'dehn
                 i = i + 1
             Loop
             'leiste auffüllen
@@ -2249,26 +2250,26 @@ End If
                 Dumy = Ymax
                 'Stop
             End If
-            Destination.Line (L, Dumy)-(L + Q, Ymax), K, BF         'dehn
+            Destination.Line (L, Dumy)-(L + Q, Ymax), k, BF         'dehn
             Destination.Line (L, 0)-(L + Q, Ymax), vbBlack, B 'rahmen
 
         'fehlerwerte eintragen schwingungen
             If Schwingungen_berechnen = True Then
-                V = L * 1.033 '+ Destination.TextWidth("0000")
-                If B_Rex.Konstruktion.Width > 10000 Then V = L * 1.015 'bei zu grossen bildschirmen verschwindet das sonst rechts aus dem bild, 201909
-                Destination.Line (V, 0)-(V + Q, (Fehlerverlauf(1, 0) + Fehlerverlauf(1, 1)) / 2), vbRed, BF 'frequenz
+                v = L * 1.033 '+ Destination.TextWidth("0000")
+                If B_Rex.Konstruktion.Width > 10000 Then v = L * 1.015 'bei zu grossen bildschirmen verschwindet das sonst rechts aus dem bild, 201909
+                Destination.Line (v, 0)-(v + Q, (Fehlerverlauf(1, 0) + Fehlerverlauf(1, 1)) / 2), vbRed, BF 'frequenz
                 
                 i = 1
                 Do Until i >= Rechengenauigkeit - 2 Or Fehlerverlauf(1, i) >= Ymax
-                    K = B_Rex_Yellow '&H80FFFF '14 'gelb
-                    If Fehlerverlauf(4, i) = 0 Then K = B_Rex_Green '&H80FF80 '10 'grün
-                    If Fehlerverlauf(4, i) >= 100 Then K = vbRed '&H8080FF '12 'rot
+                    k = B_Rex_Yellow '&H80FFFF '14 'gelb
+                    If Fehlerverlauf(4, i) = 0 Then k = B_Rex_Green '&H80FF80 '10 'grün
+                    If Fehlerverlauf(4, i) >= 100 Then k = vbRed '&H8080FF '12 'rot
                     Dumy = (Fehlerverlauf(1, i) + Fehlerverlauf(1, i + 1)) / 2
                     If Dumy > Ymax Then
                         Dumy = Ymax
                         'Stop
                     End If
-                    Destination.Line (V, (Fehlerverlauf(1, i) + Fehlerverlauf(1, i - 1)) / 2)-(V + Q, Dumy), K, BF 'dehn
+                    Destination.Line (v, (Fehlerverlauf(1, i) + Fehlerverlauf(1, i - 1)) / 2)-(v + Q, Dumy), k, BF 'dehn
                     i = i + 1
                 Loop
                 'leiste auffüllen
@@ -2277,8 +2278,8 @@ End If
                     Dumy = Ymax
                     'Stop
                 End If
-                Destination.Line (L, Dumy)-(L + Q, Ymax), K, BF         'dehn
-                Destination.Line (V, 0)-(V + Q, Ymax), vbBlack, B 'rahmen
+                Destination.Line (L, Dumy)-(L + Q, Ymax), k, BF         'dehn
+                Destination.Line (v, 0)-(v + Q, Ymax), vbBlack, B 'rahmen
             End If
         
         Destination.DrawWidth = Strichbreite
@@ -2322,13 +2323,13 @@ End If
         Select Case Auflegemodus
             Case 4 'feder/gewicht, hat geklappt
                 Destination.CurrentX = L / 50
-                Destination.Print Lang_Res(649) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).S(1) & ")"  'Auflegedehnung durch Feder/Gewicht
+                Destination.Print Lang_Res(649) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).s(1) & ")"  'Auflegedehnung durch Feder/Gewicht
             Case 3 'dehnungsvorgabe
                 Destination.CurrentX = L / 50
-                Destination.Print Lang_Res(650) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).S(1) & ")"  'gewählte Auflegedehnung
+                Destination.Print Lang_Res(650) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).s(1) & ")"  'gewählte Auflegedehnung
             Case 1, 2 'comp-optimiert oder in abh mx dehnung
                 Destination.CurrentX = L / 50
-                Destination.Print Lang_Res(651) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).S(1) & ")"  '"erf. Auflegedehnung
+                Destination.Print Lang_Res(651) & Format(Sys(1).E(53), "#####0.00") & " (" & Sys(1).s(1) & ")"  '"erf. Auflegedehnung
         End Select
         
     Destination.ForeColor = QBColor(0)
@@ -2342,7 +2343,7 @@ Dim YS1 As Double, YS2 As Double 'spitzenlasten, die x- koordinaten sind identis
 Dim YS1memo As Double, YS2memo As Double 'zwischenspeichern
 
 'Dim ImFörderer As Boolean
-Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integer
+Dim k As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integer
 'L soll die tatsächliche rechenreihenfolge (start im Leertrum) tarnen
     
     FuVolumenSp = 0
@@ -2354,15 +2355,15 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
     
     
     L = Sys(Antriebsscheibe).Lraus
-    K = Startelement 'wird oben in richtiger richtung festgelegt
-    If Sys(K).Element = "" Then Exit Sub 'keine anlage da, hier droht absturz
+    k = Startelement 'wird oben in richtiger richtung festgelegt
+    If Sys(k).Element = "" Then Exit Sub 'keine anlage da, hier droht absturz
     'If K = 0 Then Exit Sub
     IaltK = Antriebsscheibe 'von da kommt er, da soll er nicht gleich wieder hin
 
     X1 = L
-    Y1 = Sys(K).Furein
-    X2 = L - Sys(K).Lrein
-    Y2 = Sys(K).Furein
+    Y1 = Sys(k).Furein
+    X2 = L - Sys(k).Lrein
+    Y2 = Sys(k).Furein
     'If Drucken = True Then Stop
     YS1 = Y1
     YS2 = Y2 + (X1 - X2) * Sys(1).FusteigSp  'nur die bandbeschleunigung
@@ -2372,33 +2373,33 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
     'die kurve zum aktuellen element muß hier schon gezeichnet sein
     Do
         'festhalten zur berechnung der durchbiegung bei scheiben, nullen, falls es anderen elementen zugeordnet wird
-            Sys(K).FureinSp = 0
-            Sys(K).FurausSp = 0
+            Sys(k).FureinSp = 0
+            Sys(k).FurausSp = 0
         
-        If left(Sys(K).Tag, 1) = "0" Then 'einfach stehendes
+        If left(Sys(k).Tag, 1) = "0" Then 'einfach stehendes
             'scheiben
-            X1 = L - Sys(K).Lrein
-            Y1 = Sys(K).Furein
-            X2 = L - Sys(K).Lraus
-            Y2 = Sys(K).Furaus
+            X1 = L - Sys(k).Lrein
+            Y1 = Sys(k).Furein
+            X2 = L - Sys(k).Lraus
+            Y2 = Sys(k).Furaus
             
             'spitzenlast
                 YS1 = YS2
                 'anfang der strecke +kraft aus normalbetrieb +spitzenlast durch beschleunigung dieses bandstückchens +spitzenlast durch beschleunigung der scheibenmasse
-                YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * Sys(1).FusteigSp + Sys(K).E(98)  'und dann noch irgendwas
+                YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * Sys(1).FusteigSp + Sys(k).E(98)  'und dann noch irgendwas
                 
                 'festhalten zur berechnung der durchbiegung bei scheiben
                 'eigentlich nur für den letzten durchlauf erforderlich
                 'If Zeichnen = True Then'immer, weil sie trotz abgeschaltetem zeichnen erfasst werden muss
-                    Sys(K).FureinSp = YS1 '- (AuflTrumkraftSp - AuflTrumKraft)
-                    Sys(K).FurausSp = YS2 '- (AuflTrumkraftSp - AuflTrumKraft)
+                    Sys(k).FureinSp = YS1 '- (AuflTrumkraftSp - AuflTrumKraft)
+                    Sys(k).FurausSp = YS2 '- (AuflTrumkraftSp - AuflTrumKraft)
                 'End If
                 
                 'abweichung mitprotokollieren zur korrektur der spitzenlast bei feder/gewicht
                 'nur beim letzten mal nicht, sonst gehts durcheinander
                 'hier, weil k hier eindeutig zur scheibe und nicht zur strecke zum nächsten element gehört
                 'wiederholung ganz unten bei schlupfausgleich an der antriebsscheibe
-                If K = ScheibeFedGew Then
+                If k = ScheibeFedGew Then
                     ScheibeFedGewSpitzeFu = (YS1 + YS2) / 2 '- (AuflTrumkraftSp - AuflTrumKraft) 'letzte klammer ist korrektur, wos hingezeichnet wird
                     ScheibeFedGewNormalFu = (Y1 + Y2) / 2
                 End If
@@ -2407,16 +2408,16 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
             'ImFörderer = False
         Else 'förderer
             Lrein = 0 'enthält Abstand vom Trägeranfang
-            Furein = Sys(K).Furein 'protokolliert fuverlauf der huckepacks
+            Furein = Sys(k).Furein 'protokolliert fuverlauf der huckepacks
             'M = 0 'akt. Position auf Träger
-            If Sys(K).Rechts = True Then 'wie unter B_Rex1: reversieren = false
+            If Sys(k).Rechts = True Then 'wie unter B_Rex1: reversieren = false
                 'also zuerst die linken teile (e(25) als maßstab in allen fällen, denn den haben alle huckepacks
-                Rechts = Sys(K).E(22) + 1 'nur einmal pro förderer und dann von rechts nach links
+                Rechts = Sys(k).E(22) + 1 'nur einmal pro förderer und dann von rechts nach links
                 Links = -1
                 Do
                     j = 0
                     For i = 9 To Maxelementindex
-                        If Sys(i).Zugehoerigkeit = K And Sys(i).Tag <> "201" Then 'kein transportgut
+                        If Sys(i).Zugehoerigkeit = k And Sys(i).Tag <> "201" Then 'kein transportgut
                             If Sys(i).E(25) > Links And Sys(i).E(25) < Rechts Then
                                 j = i
                                 Rechts = Sys(i).E(25) 'neue linke grenze
@@ -2424,15 +2425,15 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                         End If
                     Next i
                     Links = Sys(j).E(25) 'damit die linken nicht immer wieder drankommen
-                    Rechts = Sys(K).E(22) + 1
+                    Rechts = Sys(k).E(22) + 1
                     If j > 0 Then 'er hat noch ein unbehandeltes gefunden
                         If Sys(j).Tag = "204" Or Sys(j).Tag = "206" Then 'stau oder trägergebundene_Umfangskraft
                             
                             'zum huckepack
-                                X1 = L - (Sys(K).Lrein + Lrein) 'zum huckepack
+                                X1 = L - (Sys(k).Lrein + Lrein) 'zum huckepack
                                 Y1 = Furein
-                                X2 = L - (Sys(K).Lrein + Sys(j).E(25))
-                                Y2 = (X1 - X2) * Sys(K).Fusteig + Furein
+                                X2 = L - (Sys(k).Lrein + Sys(j).E(25))
+                                Y2 = (X1 - X2) * Sys(k).Fusteig + Furein
                                 
                                 'spitzenlast
                                     YS1 = YS2
@@ -2441,14 +2442,14 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung dieses bandstückchens
                                     'spitzenlast durch beschleunigung des transportgutes
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
-                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll) 'und dann noch irgendwas
+                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll) 'und dann noch irgendwas
                                 
                                 GoSub ALD
                             
                             'durchs huckepack
                                 X1 = X2
                                 Y1 = Y2
-                                X2 = L - (Sys(K).Lrein + Sys(j).E(46))
+                                X2 = L - (Sys(k).Lrein + Sys(j).E(46))
                                 Y2 = Y1 + Sys(j).E(50)
                                 Lrein = Sys(j).E(46)
                                 
@@ -2461,7 +2462,7 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
                                     'If Zeichnen = True Then Stop
                                     If Sys(j).Tag = "204" Then 'stau
-                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSpRoll) 'ohne beschleunigung transportgut
+                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSpRoll) 'ohne beschleunigung transportgut
                                     End If
                                     If Sys(j).Tag = "206" Then 'freie förderergebundene umfangskraft
                                         If (Sys(j).E(46) - Sys(j).E(25)) > 0 Then
@@ -2469,17 +2470,17 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                         Else
                                             YS2 = YS2 + Sys(j).E(98) 'dann eben punktueller anstieg
                                         End If
-                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll + Sys(j).FusteigSp) 'und dann noch irgendwas
+                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll + Sys(j).FusteigSp) 'und dann noch irgendwas
                                     End If
                                     
                         End If
                         If Sys(j).Tag = "205" Then 'abweiser
                             
                             'zum abweiser
-                                X1 = L - (Sys(K).Lrein + Lrein) 'k enthält den träger
+                                X1 = L - (Sys(k).Lrein + Lrein) 'k enthält den träger
                                 Y1 = Furein
-                                X2 = L - (Sys(K).Lrein + Sys(j).E(25))
-                                Y2 = (X1 - X2) * Sys(K).Fusteig + Furein
+                                X2 = L - (Sys(k).Lrein + Sys(j).E(25))
+                                Y2 = (X1 - X2) * Sys(k).Fusteig + Furein
                                 
                                 'spitzenlast
                                     YS1 = YS2
@@ -2488,7 +2489,7 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung dieses bandstückchens
                                     'spitzenlast durch beschleunigung des transportgutes
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
-                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll) 'und dann noch irgendwas
+                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll) 'und dann noch irgendwas
                                 
                                 GoSub ALD
                             
@@ -2513,12 +2514,12 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                     End If
                 Loop Until j = 0 'kein stau/abweiser/freie umfangskraft mehr gefunden
             Else 'wie unter B_rex1, reversieren = true
-                Rechts = Sys(K).E(22) + 1 'nur einmal pro förderer und dann von rechts nach links
+                Rechts = Sys(k).E(22) + 1 'nur einmal pro förderer und dann von rechts nach links
                 Links = -1
                 Do
                     j = 0
                     For i = 9 To Maxelementindex
-                        If Sys(i).Zugehoerigkeit = K And Sys(i).Tag <> "201" Then 'kein transportgut
+                        If Sys(i).Zugehoerigkeit = k And Sys(i).Tag <> "201" Then 'kein transportgut
                             If Sys(i).E(25) > Links And Sys(i).E(25) < Rechts Then
                                 j = i
                                 Links = Sys(i).E(25) 'neue rechte grenze
@@ -2531,10 +2532,10 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                     If j > 0 Then 'er hat noch ein unbehandeltes gefunden
                         If Sys(j).Tag = "204" Or Sys(j).Tag = "206" Then 'stau oder trägergebundene_Umfangskraft
                             'zum huckpack
-                                X1 = L - (Sys(K).Lrein + Lrein) 'lrein immer innerhalb des trägers
+                                X1 = L - (Sys(k).Lrein + Lrein) 'lrein immer innerhalb des trägers
                                 Y1 = Furein
-                                X2 = L - (Sys(K).Lrein + (Sys(K).E(22) - Sys(j).E(46)))
-                                Y2 = (X1 - X2) * Sys(K).Fusteig + Furein
+                                X2 = L - (Sys(k).Lrein + (Sys(k).E(22) - Sys(j).E(46)))
+                                Y2 = (X1 - X2) * Sys(k).Fusteig + Furein
                                     
                                 'spitzenlast
                                     YS1 = YS2
@@ -2543,14 +2544,14 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung dieses bandstückchens
                                     'spitzenlast durch beschleunigung des transportgutes
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
-                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll) 'und dann noch irgendwas
+                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll) 'und dann noch irgendwas
 
                                 GoSub ALD 'zum stau
                             
                             'durchs huckepack
                                 X1 = X2
                                 Y1 = Y2
-                                X2 = L - (Sys(K).Lrein + (Sys(K).E(22) - Sys(j).E(25)))
+                                X2 = L - (Sys(k).Lrein + (Sys(k).E(22) - Sys(j).E(25)))
                                 Y2 = Y2 + Sys(j).E(50)
                                     
                                 'spitzenlast
@@ -2562,7 +2563,7 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
                                     'If Zeichnen = True Then Stop
                                     If Sys(j).Tag = "204" Then 'stau
-                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSpRoll) 'ohne beschleunigung transportgut
+                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSpRoll) 'ohne beschleunigung transportgut
                                     End If
                                     If Sys(j).Tag = "206" Then 'freie förderergebundene umfangskraft
                                         If (Sys(j).E(46) - Sys(j).E(25)) > 0 Then
@@ -2570,16 +2571,16 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                         Else
                                             YS2 = YS2 + Sys(j).E(98) 'dann eben punktueller anstieg
                                         End If
-                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll + Sys(j).FusteigSp) 'und dann noch irgendwas
+                                        YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll + Sys(j).FusteigSp) 'und dann noch irgendwas
                                     End If
 
                         End If
                         If Sys(j).Tag = "205" Then
                             'zum abweiser
-                                X1 = L - (Sys(K).Lrein + Lrein)
+                                X1 = L - (Sys(k).Lrein + Lrein)
                                 Y1 = Furein
-                                X2 = L - (Sys(K).Lrein + (Sys(K).E(22) - Sys(j).E(25)))
-                                Y2 = (X1 - X2) * Sys(K).Fusteig + Furein
+                                X2 = L - (Sys(k).Lrein + (Sys(k).E(22) - Sys(j).E(25)))
+                                Y2 = (X1 - X2) * Sys(k).Fusteig + Furein
                                 
                                 'spitzenlast
                                     YS1 = YS2
@@ -2588,7 +2589,7 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                                     'spitzenlast durch beschleunigung dieses bandstückchens
                                     'spitzenlast durch beschleunigung des transportgutes
                                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
-                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll) 'und dann noch irgendwas
+                                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll) 'und dann noch irgendwas
                                 
                                 GoSub ALD
                             
@@ -2609,16 +2610,16 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                         Sys(j).Furein = Y1
                         Sys(j).Furaus = Y2
                         Furein = Y2
-                        Lrein = Sys(K).E(22) - Sys(j).E(25)
+                        Lrein = Sys(k).E(22) - Sys(j).E(25)
                    End If
                 Loop Until j = 0
             End If
            
             'restlänge bis trägerende
-                X1 = L - (Sys(K).Lrein + Lrein)
+                X1 = L - (Sys(k).Lrein + Lrein)
                 Y1 = Furein
-                X2 = L - Sys(K).Lraus
-                Y2 = Sys(K).Furaus
+                X2 = L - Sys(k).Lraus
+                Y2 = Sys(k).Furaus
                 
                 'spitzenlast
                     YS1 = YS2
@@ -2627,25 +2628,25 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
                     'spitzenlast durch beschleunigung dieses bandstückchens
                     'spitzenlast durch beschleunigung des transportgutes
                     'spitzenlast durch beschleunigung der rollen, sofern welche da sind
-                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(K).FusteigSp + Sys(K).FusteigSpRoll) 'und dann noch irgendwas
+                    YS2 = YS2 + (Y2 - Y1) + (X1 - X2) * (Sys(1).FusteigSp + Sys(k).FusteigSp + Sys(k).FusteigSpRoll) 'und dann noch irgendwas
     
                 GoSub ALD
         End If
         
         'nächstes element entlang des bandes ermitteln
-        If Sys(K).Verb(1, 1) = IaltK Then 'voreinstellungen für neuen durchlauf
-            IaltK = K
-            K = Sys(K).Verb(2, 1)
+        If Sys(k).Verb(1, 1) = IaltK Then 'voreinstellungen für neuen durchlauf
+            IaltK = k
+            k = Sys(k).Verb(2, 1)
         Else
-            IaltK = K
-            K = Sys(K).Verb(1, 1)
+            IaltK = k
+            k = Sys(k).Verb(1, 1)
         End If
         
         'linie zum nächsten element ziehen
             X1 = L - Sys(IaltK).Lraus
             Y1 = Y2
-            X2 = L - Sys(K).Lrein
-            Y2 = Sys(K).Furein
+            X2 = L - Sys(k).Lrein
+            Y2 = Sys(k).Furein
             
             'spitzenlast
                 YS1 = YS2
@@ -2654,12 +2655,12 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
             
             GoSub ALD 'kurve zum nächsten element, wird immer durchgeführt
         
-    Loop Until K = Antriebsscheibe Or K >= Maxelementindex + 1 'einmal rum oder es ist was schiefgegangen
+    Loop Until k = Antriebsscheibe Or k >= Maxelementindex + 1 'einmal rum oder es ist was schiefgegangen
     
     
     'Schlupfausgleich an der Antriebsscheibe
-        X1 = L - Sys(K).Lrein
-        Y1 = Sys(K).Furein
+        X1 = L - Sys(k).Lrein
+        Y1 = Sys(k).Furein
         X2 = 0
         Y2 = Sys(Startelement).Furein
         
@@ -2669,14 +2670,14 @@ Dim K As Integer, IaltK As Integer, j As Integer, i As Integer, LetztHP As Integ
             YS2 = Y2 'zurück an den ursprung
         
             'If Zeichnen = True Then 'spitzenlastanteil für durchbiegung festhalten
-                Sys(K).FureinSp = YS1 '- (AuflTrumkraftSp - AuflTrumKraft)
-                Sys(K).FurausSp = YS2 '- (AuflTrumkraftSp - AuflTrumKraft)
+                Sys(k).FureinSp = YS1 '- (AuflTrumkraftSp - AuflTrumKraft)
+                Sys(k).FurausSp = YS2 '- (AuflTrumkraftSp - AuflTrumKraft)
             'End If
         
             'abweichung mitprotokollieren zur korrektur der spitzenlast bei feder/gewicht
                 'nur beim letzten mal nicht, sonst gehts durcheinander
                 'hier, weil k hier eindeutig zur scheibe und nicht zur strecke zum nächsten element gehört
-                If K = ScheibeFedGew Then
+                If k = ScheibeFedGew Then
                     ScheibeFedGewSpitzeFu = (YS1 + YS2) / 2 '- (AuflTrumkraftSp - AuflTrumKraft) 'letzte klammer ist korrektur, wos hingezeichnet wird
                     ScheibeFedGewNormalFu = (Y1 + Y2) / 2
                 End If
@@ -2790,7 +2791,7 @@ Dim Ampmiser As Boolean
         '1 = Alterung nur bei unter 0,35 Reibungszahl
         '2 = Alterung nur bei ueber 0,35 Reibungszahl
         'beispiel  mue = ReibungszahlBerechnung(mue, 1, Sys(K).E(14), true)
-        If InStr(Sys(1).S(1), "TX0") > 0 Then Ampmiser = True
+        If InStr(Sys(1).s(1), "TX0") > 0 Then Ampmiser = True
         If Init_B_Rex_Aging = 1 Then
             If Alterung = 1 And M < 0.35 Then M = (Abs(M) + 0.35) / 2
             If Alterung = 2 And M > 0.35 Then M = (Abs(M) + 0.35) / 2
@@ -2831,4 +2832,5 @@ Function Fw_Fu_Winkelabh(Winkel As Double) As Double
     If Winkel > 300 Then Fw_Fu_Winkelabh = 1.1
     If Winkel > 330 Then Fw_Fu_Winkelabh = 1
 End Function
+
 

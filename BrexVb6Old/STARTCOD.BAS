@@ -157,7 +157,7 @@ Public Const Eigenschaftszahl As Integer = 120
 Public El(-10 To Eigenschaftszahl) As El
 Public Const TextEigenschaftszahl As Integer = 10
 
-Type S
+Type s
     Height As Integer
     Width As Integer
     Top As Integer
@@ -169,8 +169,8 @@ Type S
     Vollstaendig As Boolean
     Zugehoerigkeit As Integer 'Huckepacks zum Träger (Elementindex)
     E(Eigenschaftszahl) As Double
-    S(TextEigenschaftszahl) As String 'dient der speicherung der info-felder
-    B(-TextEigenschaftszahl To Eigenschaftszahl) As Boolean
+    s(TextEigenschaftszahl) As String 'dient der speicherung der info-felder
+    b(-TextEigenschaftszahl To Eigenschaftszahl) As Boolean
     Verb(2, 4) As Double
         '1,1 verbundenes element
         '1,2 pos.der verb., wird bei jedem bildschirmaufbau neu erzeugt
@@ -196,8 +196,8 @@ Public Maxelementindex As Integer 'höchster benutzter index, damit nicht komplet
 '2 reserviert für band, darf nicht verändert werden, dient zum vergleich mit 2
 '3-9 bleiben leer für was auch immer
 'del ist zum löschen
-Public Sys(Maxelementezahl) As S
-Public Del As S 'nur zum löschen der anderen
+Public Sys(Maxelementezahl) As s
+Public Del As s 'nur zum löschen der anderen
 
 Public BarCodeFont As String
 
@@ -285,7 +285,216 @@ Sub Main()
     Call Code1.DatbaSteuerung1(1)
     Load B_Rex
     B_Rex.Show
+    DumpData
 End Sub
+
+Public Sub DumpData()
+    Dim fn As Integer
+    fn = FreeFile
+    Open "C:\temp\vb6dump.json" For Output As #fn
+
+    Print #fn, "{"
+
+    Call DumpSys(fn)
+    Print #fn, ","
+    Call DumpEl(fn)
+    Print #fn, ","
+    Call DumpKst(fn)
+
+    Print #fn, "}"
+    Close #fn
+
+    MsgBox "Dump complete."
+End Sub
+
+Private Sub DumpSys(ByVal fn As Integer)
+    Dim i As Long, j As Long, k As Long, x As Long, y As Long
+    Dim firstObj As Boolean, firstInner As Boolean
+
+    Print #fn, "  ""Sys"": ["
+
+    firstObj = True
+    For i = 0 To Maxelementezahl
+        'wenn du nur “benutzte” Elemente willst, hier ggf. filtern
+        If Not firstObj Then
+            Print #fn, "    ,"
+        End If
+        firstObj = False
+
+        With Sys(i)
+            Print #fn, "    {"
+            Print #fn, "      ""Index"": " & CStr(i) & ","
+            Print #fn, "      ""Height"": " & JsonNumber(.Height) & ","
+            Print #fn, "      ""Width"": " & JsonNumber(.Width) & ","
+            Print #fn, "      ""Top"": " & JsonNumber(.Top) & ","
+            Print #fn, "      ""Left"": " & JsonNumber(.left) & ","
+            Print #fn, "      ""Element"": """ & JsonEscape(.Element) & ""","
+            Print #fn, "      ""Tag"": """ & JsonEscape(.Tag) & ""","
+            Print #fn, "      ""Rechts"": " & JsonBool(.Rechts) & ","
+            Print #fn, "      ""Vollstaendig"": " & JsonBool(.Vollstaendig) & ","
+            Print #fn, "      ""Zugehoerigkeit"": " & JsonNumber(.Zugehoerigkeit) & ","
+
+            'E() als Objekt mit Index-Keys
+            Print #fn, "      ""E"": {"
+            firstInner = True
+            For j = 1 To Eigenschaftszahl
+                If Not firstInner Then Print #fn, ","
+                firstInner = False
+                Print #fn, "        """ & CStr(j) & """: " & JsonNumber(.E(j))
+            Next j
+            Print #fn, ""
+            Print #fn, "      },"
+
+            'S() als Objekt mit Index-Keys
+            Print #fn, "      ""S"": {"
+            firstInner = True
+            For j = 1 To TextEigenschaftszahl
+                If Not firstInner Then Print #fn, ","
+                firstInner = False
+                Print #fn, "        """ & CStr(j) & """: """ & JsonEscape(.s(j)) & """"
+            Next j
+            Print #fn, ""
+            Print #fn, "      },"
+
+            'B() mit negativen Indizes ? Objekt
+            Print #fn, "      ""B"": {"
+            firstInner = True
+            For j = -TextEigenschaftszahl To Eigenschaftszahl
+                If Not firstInner Then Print #fn, ","
+                firstInner = False
+                Print #fn, "        """ & CStr(j) & """: " & JsonBool(.b(j))
+            Next j
+            Print #fn, ""
+            Print #fn, "      },"
+
+            'Verb(2,4) ? Objekt von Objekten
+            Print #fn, "      ""Verb"": {"
+            For x = 1 To 2
+                Print #fn, "        """ & CStr(x) & """: {"
+                For y = 1 To 4
+                    If y < 4 Then
+                        Print #fn, "          """ & CStr(y) & """: " & JsonNumber(.Verb(x, y)) & ","
+                    Else
+                        Print #fn, "          """ & CStr(y) & """: " & JsonNumber(.Verb(x, y))
+                    End If
+                Next y
+                If x < 2 Then
+                    Print #fn, "        },"
+                Else
+                    Print #fn, "        }"
+                End If
+            Next x
+            Print #fn, "      },"
+
+            'Restliche Felder
+            Print #fn, "      ""Anzverb"": " & JsonNumber(.Anzverb) & ","
+            Print #fn, "      ""Lrein"": " & JsonNumber(.Lrein) & ","
+            Print #fn, "      ""Lraus"": " & JsonNumber(.Lraus) & ","
+            Print #fn, "      ""Furein"": " & JsonNumber(.Furein) & ","
+            Print #fn, "      ""Furaus"": " & JsonNumber(.Furaus) & ","
+            Print #fn, "      ""FureinSp"": " & JsonNumber(.FureinSp) & ","
+            Print #fn, "      ""FurausSp"": " & JsonNumber(.FurausSp) & ","
+            Print #fn, "      ""Fusteig"": " & JsonNumber(.Fusteig) & ","
+            Print #fn, "      ""FusteigSp"": " & JsonNumber(.FusteigSp) & ","
+            Print #fn, "      ""FusteigSpRoll"": " & JsonNumber(.FusteigSpRoll)
+
+            Print #fn, "    }"
+        End With
+    Next i
+
+    Print #fn, "  ]"
+End Sub
+
+Private Sub DumpEl(ByVal fn As Integer)
+    Dim i As Long, j As Long
+    Dim firstObj As Boolean, firstInner As Boolean
+
+    Print #fn, "  ""El"": ["
+
+    firstObj = True
+    For i = -10 To Eigenschaftszahl
+        If Not firstObj Then
+            Print #fn, "    ,"
+        End If
+        firstObj = False
+
+        With El(i)
+            Print #fn, "    {"
+            Print #fn, "      ""Index"": " & CStr(i) & ","
+            Print #fn, "      ""Eigenschaft"": """ & JsonEscape(.Eigenschaft) & ""","
+            Print #fn, "      ""Einheit"": """ & JsonEscape(.Einheit) & ""","
+            Print #fn, "      ""Feldart"": """ & JsonEscape(.Feldart) & ""","
+            Print #fn, "      ""Minimum"": " & JsonNumber(.Minimum) & ","
+            Print #fn, "      ""Maximum"": " & JsonNumber(.Maximum) & ","
+
+            Print #fn, "      ""Eig"": {"
+            firstInner = True
+            For j = 1 To 30
+                If Not firstInner Then Print #fn, ","
+                firstInner = False
+                Print #fn, "        """ & CStr(j) & """: """ & JsonEscape(.Eig(j)) & """"
+            Next j
+            Print #fn, ""
+            Print #fn, "      }"
+
+            Print #fn, "    }"
+        End With
+    Next i
+
+    Print #fn, "  ]"
+End Sub
+
+Private Sub DumpKst(ByVal fn As Integer)
+    Dim i As Long
+    Dim firstObj As Boolean
+
+    Print #fn, "  ""Kst"": ["
+
+    firstObj = True
+    For i = 1 To 300
+        If Not firstObj Then
+            Print #fn, "    ,"
+        End If
+        firstObj = False
+
+        With Kst(i)
+            Print #fn, "    {"
+            Print #fn, "      ""Index"": " & CStr(i) & ","
+            Print #fn, "      ""ID"": " & JsonNumber(.ID) & ","
+            Print #fn, "      ""zuEigenschaft"": " & JsonNumber(.zuEigenschaft) & ","
+            Print #fn, "      ""Bezeichnung"": """ & JsonEscape(.Bezeichnung) & ""","
+            Print #fn, "      ""Einstellung"": " & JsonNumber(.Einstellung)
+            Print #fn, "    }"
+        End With
+    Next i
+
+    Print #fn, "  ]"
+End Sub
+
+Private Function JsonEscape(ByVal s As String) As String
+    Dim r As String
+    r = s
+    r = Replace$(r, "\", "\\")
+    r = Replace$(r, """", "\""")
+    r = Replace$(r, vbCrLf, "\n")
+    r = Replace$(r, vbCr, "\n")
+    r = Replace$(r, vbLf, "\n")
+    r = Replace$(r, vbTab, "\t")
+    JsonEscape = r
+End Function
+
+Private Function JsonBool(ByVal b As Boolean) As String
+    If b Then
+        JsonBool = "true"
+    Else
+        JsonBool = "false"
+    End If
+End Function
+
+Private Function JsonNumber(ByVal v As Double) As String
+    'Stellt sicher, dass Dezimalpunkt benutzt wird, nicht Komma
+    JsonNumber = Replace$(CStr(v), ",", ".")
+End Function
 
 
 

@@ -3,6 +3,7 @@ Imports System.Diagnostics.Metrics
 Imports System.Security.Principal
 Imports System.Text.Json
 Imports Microsoft.Data.SqlClient
+Imports Microsoft.Identity.Client.TelemetryCore.Internal
 
 Module StartCode
 
@@ -213,7 +214,15 @@ Module StartCode
     'del ist zum löschen
     Public Sys As S() = New S(Maxelementezahl) {}
 
+    Public Class BrexParameters
+        Public Sys As S()
+        Public Kst As KstModel()
+        Public El As ElModel()
+    End Class
+
     Public Del = New S 'nur zum löschen der anderen
+
+    Public Lang_Res As Dictionary(Of Integer, String) = New Dictionary(Of Integer, String)()
 
     Public BarCodeFont As String
 
@@ -310,6 +319,7 @@ Module StartCode
             ReadKonstanten(connection)
             ReadBeispielAnlagen(connection)
             ReadArtikeldaten(connection, "900025")
+            ReadLanguageResources(connection)
         End Using
         Console.WriteLine("Hier später die Pick_It Daten Laden")
         Sys(1).S(1) = "Typ('typ')"
@@ -364,6 +374,17 @@ Module StartCode
                 Kst(i).zuEigenschaft = reader("zu_Eigenschaft")
                 Kst(i).Bezeichnung = reader("bezeichnung")
                 Kst(i).Einstellung = reader("einstellung")
+            End While
+        End Using
+    End Sub
+
+    Private Sub ReadLanguageResources(connection As SqlConnection)
+        Dim command = New SqlCommand("SELECT * from language_ress", connection)
+        Using reader = command.ExecuteReader()
+            While reader.Read()
+                If IsDefined(reader("ID")) Then
+                    Lang_Res.Add(reader("ID"), If(IsDefined(reader("german")), reader("german"), "?" + reader("ID").ToString() + "?"))
+                End If
             End While
         End Using
     End Sub
@@ -589,8 +610,34 @@ Module StartCode
         Wert = Mid(input, N + 1, M - N)
     End Sub
 
+    Private Sub Wiederherstellen()
+        '''If Sys(1).S(2) <> SystemTyp.Artnr Then
+        '''    Call Code1.SystemTyp_Set(Sys(1).S(2))
+        '''End If
+
+        Call Zwei_Scheiben()
+        '''Call CodeDraw.Alleelementeverbinden
+        Call CodeCalc.Rechnungssteuerung("EVC")
+
+        '''den rev - knopf noch richtig rum drehen => UI-Update, später
+        If Reversieren = True Then
+
+            '''    If B_Rex.Datei(9).Tag = "A" Then Call Mother.Knopfverwaltung(9, "GrosserKnopf", "Button", "B_Rex")
+            '''Else
+            '''    If B_Rex.Datei(9).Tag = "E" Then Call Mother.Knopfverwaltung(9, "GrosserKnopf", "Button", "B_Rex")
+        End If
+
+        Lastaktel = 0
+        Call B_Rex.Tabelle_ausfuellen(0)
+        Call Language.B_Rex_Uebersetzen()
+
+        Gespeichert = True
+
+    End Sub
+
     Friend Sub ProcessTemplate(templateName As String)
         CurrentAnlage = Templates.Where(Function(t) t IsNot Nothing).SingleOrDefault(Function(t) t.Bezeichnung = templateName)
         Auslesen()
+        Wiederherstellen()
     End Sub
 End Module
