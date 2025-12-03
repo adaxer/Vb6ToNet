@@ -90,6 +90,18 @@ Public Module VBCompat
         Return Math.Abs(x)
     End Function
 
+    Public Function Tan(ByVal x As Double) As Double
+        Return Math.Tan(x)
+    End Function
+
+    Public Function Cos(ByVal x As Double) As Double
+        Return Math.Cos(x)
+    End Function
+
+    Public Function Atn(ByVal x As Double) As Double
+        Return Math.Atan(x)
+    End Function
+
     Public Function Abs(ByVal x As Integer) As Integer
         Return Math.Abs(x)
     End Function
@@ -99,4 +111,5 @@ Public Module VBCompat
     ' InStr\(\s*([^,()]+)\s*,\s*("([^"]*)"|'([^']*)'|[^,()]+)\s*\)\s*>\s*0 => $1.Contains($2)   ' Instr(a,b) > 0  => a.Contains(b)
     ' Chr$(13) & Chr$(10) => Environment.NewLine
     ' Abs(x) => Math.Abs(x)
+    ' Round( => Math.Round(
 End Module

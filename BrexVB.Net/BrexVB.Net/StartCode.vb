@@ -585,9 +585,6 @@ Module StartCode
             If ElNummer > Maxelementindex Then Maxelementindex = ElNummer
 
         Loop Until InStr(j, CurrentAnlage.Anlage, "#BOT[") = 0 'end of file
-
-        'A = CDbl("123,234E-04")
-        Exit Sub
     End Sub
 
     Private Sub String_auslesen(ByVal input As String, ByRef Wert As String, ByRef Klammer As String)
